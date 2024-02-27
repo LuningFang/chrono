@@ -303,7 +303,7 @@ void Rassor::Create(RassorWheelType wheel_type) {
         chrono_types::make_shared<RassorDrum>("razor_F", ChFrame<>(ChVector<>(+rx, ry, rz), QUNIT), m_wheel_material);
 
     m_razors[1] =
-        chrono_types::make_shared<RassorDrum>("razor_B", ChFrame<>(ChVector<>(-rx, ry, rz), z2z180), m_wheel_material);
+        chrono_types::make_shared<RassorDrum>("razor_B", ChFrame<>(ChVector<>(-rx, ry, rz), QUNIT), m_wheel_material);
 
     // initialize rover arms
 

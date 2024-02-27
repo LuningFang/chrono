@@ -42,7 +42,7 @@ using namespace chrono::geometry;
 using namespace chrono::rassor;
 
 // Output directories and settings
-const std::string out_dir = GetChronoOutputPath() + "FSI_new_api/";
+const std::string out_dir = GetChronoOutputPath() + "FSI_slow/";
 
 // If true, save as Wavefront OBJ; if false, save as VTK
 bool save_obj = false;
@@ -84,9 +84,9 @@ std::string wheel_obj = "robot/rassor/obj/rassor_wheel.obj";
 
 
 double wheel_velocity = 0.3; 
-double bucket_omega = 4.17; 
-double wheel_driver_speed = 1.35;
-double bucket_driver_speed = 4.17;
+double bucket_omega = 2.08; 
+double wheel_driver_speed = 0.68;
+double bucket_driver_speed = 2.08;
 
 
 std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_method) {
@@ -272,19 +272,8 @@ int main(int argc, char* argv[]) {
             driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed);
         }
 
-
-        if (time <= 0.5) {
-            driver->SetArmMotorSpeed((RassorDirID)0, 0.05);
-            driver->SetArmMotorSpeed((RassorDirID)1, -0.05);
-        } else {
-        
-            driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
-            driver->SetArmMotorSpeed((RassorDirID)1, 0.0);        
-        
-        }
-            
-        driver->SetRazorMotorSpeed((RassorDirID)0,  bucket_driver_speed);
-        driver->SetRazorMotorSpeed((RassorDirID)1, -bucket_driver_speed);
+        driver->SetRazorMotorSpeed((RassorDirID)0, -bucket_driver_speed);
+        driver->SetRazorMotorSpeed((RassorDirID)1,  bucket_driver_speed);
 
         rover->Update();
 
@@ -374,9 +363,15 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
         }
     }
 
-    std::vector<ChVector<>> BCE_razor;
-    BCE_razor = LoadSolidPhaseBCE(GetChronoDataFile("robot/rassor/bce/rassor_drum.csv"));
-    std::cout << "BCE Razor len:" << BCE_razor.size() << std::endl;
+    std::vector<ChVector<>> BCE_razor_back;
+    BCE_razor_back = LoadSolidPhaseBCE(GetChronoDataFile("robot/rassor/bce/rassor_drum.csv"));
+    std::cout << "BCE Razor len:" << BCE_razor_back.size() << std::endl;
+
+    // now create vector BCE_razor_front, it is the mirrored version of BCE_razor_back, where x value is flipped
+    std::vector<ChVector<>> BCE_razor_front;
+    for (int i = 0; i < BCE_razor_back.size(); i++) {
+        BCE_razor_front.push_back(ChVector<>(-BCE_razor_back[i].x(), BCE_razor_back[i].y(), BCE_razor_back[i].z()));
+    }
 
     // Add BCE particles and mesh of razor to the system
     for (int i = 0; i < 2; i++) {
@@ -391,9 +386,9 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
         sysFSI.AddFsiBody(razor_body);
 
         if (i == 0) {
-            sysFSI.AddPointsBCE(razor_body, BCE_razor, ChFrame<>(VNULL, QUNIT), true);
+            sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
         } else {
-            sysFSI.AddPointsBCE(razor_body, BCE_razor, ChFrame<>(VNULL, Q_FLIP_AROUND_Z), true);
+            sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
         }
     }
 }
