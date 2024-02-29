@@ -615,6 +615,11 @@ void ChSystemFsi::SetCohesionForce(double Fc) {
     m_paramsH->Coh_coeff = Fc;
 }
 
+void ChSystemFsi::SetArtificialViscosity(double alpha, double beta) {
+    m_paramsH->Ar_vis_alpha = alpha;
+    m_paramsH->Ar_vis_beta = beta;
+}
+
 ChSystemFsi::ElasticMaterialProperties::ElasticMaterialProperties()
     : Young_modulus(1e6),
       Poisson_ratio(0.3),

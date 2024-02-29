@@ -41,8 +41,6 @@ using namespace chrono::fsi;
 using namespace chrono::geometry;
 using namespace chrono::rassor;
 
-// Output directories and settings
-const std::string out_dir = GetChronoOutputPath() + "FSI_slow/";
 
 // If true, save as Wavefront OBJ; if false, save as VTK
 bool save_obj = false;
@@ -82,69 +80,39 @@ RassorWheelType wheel_type = RassorWheelType::RealWheel;
 // Use below mesh file if the wheel type is real VIPER wheel
 std::string wheel_obj = "robot/rassor/obj/rassor_wheel.obj";
 
-
-double wheel_velocity = 0.3; 
-double bucket_omega = 2.08; 
-double wheel_driver_speed = 0.68;
-double bucket_driver_speed = 2.08;
+// Speeds from Sam
+double rover_velocity_array[5] = {0.05, 0.1, 0.15, 0.2, 0.3};
+double bucket_omega_array[5]   = {0.7, 1.39, 2.09, 2.78, 4.17};
 
 
-std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_method) {
-    float mu = 0.4f;   // coefficient of friction
-    float cr = 0.2f;   // coefficient of restitution
-    float Y = 2e7f;    // Young's modulus
-    float nu = 0.3f;   // Poisson ratio
-    float kn = 2e5f;   // normal stiffness
-    float gn = 40.0f;  // normal viscous damping
-    float kt = 2e5f;   // tangential stiffness
-    float gt = 20.0f;  // tangential viscous damping
-
-    switch (contact_method) {
-        case ChContactMethod::NSC: {
-            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-            matNSC->SetFriction(mu);
-            matNSC->SetRestitution(cr);
-            return matNSC;
-        }
-        case ChContactMethod::SMC: {
-            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
-            matSMC->SetFriction(mu);
-            matSMC->SetRestitution(cr);
-            matSMC->SetYoungModulus(Y);
-            matSMC->SetPoissonRatio(nu);
-            matSMC->SetKn(kn);
-            matSMC->SetGn(gn);
-            matSMC->SetKt(kt);
-            matSMC->SetGt(gt);
-            return matSMC;
-        }
-        default:
-            return std::shared_ptr<ChMaterialSurface>();
-    }
-}
-
+std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_method);
 // Forward declaration of helper functions
 void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI);
 std::vector<ChVector<>> LoadSolidPhaseBCE(std::string filename);
+bool CreateSubDirectories(std::string out_dir);
 
 int main(int argc, char* argv[]) {
-    // Create oputput directories
-    if (!filesystem::create_directory(filesystem::path(out_dir))) {
-        std::cerr << "Error creating directory " << out_dir << std::endl;
+
+    // check number of command line inputs
+    if (argc != 4) {
+        std::cout << "usage: ./demo_ROBOT_Rassor_SPH <TestID> <artificial_viscosity> <output_folder>" << std::endl;
         return 1;
     }
-    if (!filesystem::create_directory(filesystem::path(out_dir + "/particles"))) {
-        std::cerr << "Error creating directory " << out_dir + "/particles" << std::endl;
-        return 1;
-    }
-    if (!filesystem::create_directory(filesystem::path(out_dir + "/fsi"))) {
-        std::cerr << "Error creating directory " << out_dir + "/fsi" << std::endl;
-        return 1;
-    }
-    if (!filesystem::create_directory(filesystem::path(out_dir + "/rover"))) {
-        std::cerr << "Error creating directory " << out_dir + "/rover" << std::endl;
-        return 1;
-    }
+
+    // get the TestID from the command line
+    int TestID = std::stoi(argv[1]);
+    double artificial_viscosity = std::stod(argv[2]);
+    std::string out_dir = std::string(argv[3]);
+
+
+    double wheel_radius = 0.22;
+    double wheel_driver_speed  = rover_velocity_array[TestID] / wheel_radius;
+    double bucket_driver_speed = bucket_omega_array[TestID];
+
+    // Output directories and settings
+    out_dir = GetChronoOutputPath() + out_dir + "/";
+
+    if (!CreateSubDirectories(out_dir)) { return 1; }
 
     // Create a physical system and a corresponding FSI system
     ChSystemNSC sysMBS;
@@ -156,13 +124,10 @@ int main(int argc, char* argv[]) {
 
     // Read JSON file with simulation parameters
     std::string inputJson = GetChronoDataFile("fsi/input_json/demo_FSI_Rassor_granular_NSC.json");
-    if (argc == 2) {
-        inputJson = std::string(argv[1]);
-    } else if (argc != 1) {
-        std::cout << "usage: ./demo_ROBOT_Viper_SPH <json_file>" << std::endl;
-        return 1;
-    }
     sysFSI.ReadParametersFromFile(inputJson);
+
+    // overwrite artificial viscosity 
+    sysFSI.SetArtificialViscosity(artificial_viscosity, 0.0);
 
     // Set the initial particle spacing
     sysFSI.SetInitialSpacing(iniSpacing);
@@ -425,4 +390,60 @@ std::vector<ChVector<>> LoadSolidPhaseBCE(std::string filename) {
     }
 
     return points;
+}
+
+std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_method) {
+    float mu = 0.4f;   // coefficient of friction
+    float cr = 0.2f;   // coefficient of restitution
+    float Y = 2e7f;    // Young's modulus
+    float nu = 0.3f;   // Poisson ratio
+    float kn = 2e5f;   // normal stiffness
+    float gn = 40.0f;  // normal viscous damping
+    float kt = 2e5f;   // tangential stiffness
+    float gt = 20.0f;  // tangential viscous damping
+
+    switch (contact_method) {
+        case ChContactMethod::NSC: {
+            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            matNSC->SetFriction(mu);
+            matNSC->SetRestitution(cr);
+            return matNSC;
+        }
+        case ChContactMethod::SMC: {
+            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            matSMC->SetFriction(mu);
+            matSMC->SetRestitution(cr);
+            matSMC->SetYoungModulus(Y);
+            matSMC->SetPoissonRatio(nu);
+            matSMC->SetKn(kn);
+            matSMC->SetGn(gn);
+            matSMC->SetKt(kt);
+            matSMC->SetGt(gt);
+            return matSMC;
+        }
+        default:
+            return std::shared_ptr<ChMaterialSurface>();
+    }
+}
+
+bool CreateSubDirectories(std::string out_dir){
+        // Create oputput subdirectories
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
+        std::cerr << "Error creating directory " << out_dir << std::endl;
+        return false;
+    }
+    if (!filesystem::create_directory(filesystem::path(out_dir + "/particles"))) {
+        std::cerr << "Error creating directory " << out_dir + "/particles" << std::endl;
+        return false;
+    }
+    if (!filesystem::create_directory(filesystem::path(out_dir + "/fsi"))) {
+        std::cerr << "Error creating directory " << out_dir + "/fsi" << std::endl;
+        return false;
+    }
+    if (!filesystem::create_directory(filesystem::path(out_dir + "/rover"))) {
+        std::cerr << "Error creating directory " << out_dir + "/rover" << std::endl;
+        return false;
+    }
+
+    return true;
 }

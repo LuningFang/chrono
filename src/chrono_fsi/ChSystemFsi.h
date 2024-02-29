@@ -181,6 +181,8 @@ class CH_FSI_API ChSystemFsi {
     /// By default, a ChSystemFSI solves an SPH fluid dynamics problem.
     void SetElasticSPH(const ElasticMaterialProperties mat_props);
 
+    void SetArtificialViscosity(double alpha, double beta);
+
     /// Set simulation data output length
     void SetOutputLength(int OutputLength);
 
