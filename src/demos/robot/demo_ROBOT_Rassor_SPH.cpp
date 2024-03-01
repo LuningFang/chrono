@@ -357,11 +357,11 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
         sysFSI.AddFsiBody(razor_body);
 
         // This is the case for bucket pushing soil away (front drum spin counter clock wise)
-        if (i == 0) {
-            sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
-        } else {
-            sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
-        }
+        //if (i == 0) {
+        //    sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
+        //} else {
+        //    sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
+        //}
 
         // This is the case for front drum spins clockwise
         if (i == 0) {
