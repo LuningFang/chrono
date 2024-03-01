@@ -237,8 +237,14 @@ int main(int argc, char* argv[]) {
             driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed);
         }
 
-        driver->SetRazorMotorSpeed((RassorDirID)0, -bucket_driver_speed);
-        driver->SetRazorMotorSpeed((RassorDirID)1,  bucket_driver_speed);
+        //// RASSOR 2.0, drum spinning counter clock wise
+        //driver->SetRazorMotorSpeed((RassorDirID)0, -bucket_driver_speed);
+        //driver->SetRazorMotorSpeed((RassorDirID)1,  bucket_driver_speed);
+
+        // RASSOR 1.0, drum spinning  clock wise
+        driver->SetRazorMotorSpeed((RassorDirID)0,  bucket_driver_speed);
+        driver->SetRazorMotorSpeed((RassorDirID)1, -bucket_driver_speed);
+
 
         rover->Update();
 
@@ -350,11 +356,22 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
 
         sysFSI.AddFsiBody(razor_body);
 
+        // This is the case for bucket pushing soil away (front drum spin counter clock wise)
         if (i == 0) {
             sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
         } else {
             sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
         }
+
+        // This is the case for front drum spins clockwise
+        if (i == 0) {
+            sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
+        } else {
+            sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
+        }
+
+
+
     }
 }
 
