@@ -51,10 +51,10 @@ double kernelLength = 0.004;
 double density = 2600.0;
 
 // Dimension of the space domain
-double bxDim = 4.0; // this for real
+double bxDim = 3.0; // this for real
 //double bxDim = 3.0; // use this for debug
 double byDim = 1.6;
-double bzDim = 0.2;
+double bzDim = 0.1;
 
 // Rover initial location
 ChVector<> init_loc(-bxDim / 2.0 + 1.0, 0, bzDim + 0.25);
@@ -239,47 +239,52 @@ int main(int argc, char* argv[]) {
         //driver->SetRazorMotorSpeed((RassorDirID)1,  bucket_driver_speed);
 
         // RASSOR 1.0, drum spinning  clock wise
-        //driver->SetRazorMotorSpeed((RassorDirID)0,  bucket_driver_speed);
-        //driver->SetRazorMotorSpeed((RassorDirID)1, -bucket_driver_speed);
+        driver->SetRazorMotorSpeed((RassorDirID)0,  bucket_driver_speed);
+        driver->SetRazorMotorSpeed((RassorDirID)1, -bucket_driver_speed);
 
 
-        if (time <= 2.0) {
-            for (int i = 0; i < 4; i++) {
-                driver->SetDriveMotorSpeed((RassorWheelID)i, 2.0);
-            }
-
-            driver->SetRazorMotorSpeed((RassorDirID)0, 2.0);
-            driver->SetRazorMotorSpeed((RassorDirID)1, 2.0);
-            driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
-            driver->SetArmMotorSpeed((RassorDirID)1, 0.0);
-        } else if (time > 2.0 && time <= 5.0) {
-            for (int i = 0; i < 4; i++) {
-                driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
-            }
-
-            driver->SetRazorMotorSpeed((RassorDirID)0, 3.14);
-            driver->SetRazorMotorSpeed((RassorDirID)1, -3.14);
-            driver->SetArmMotorSpeed((RassorDirID)0, 0.05);
-            driver->SetArmMotorSpeed((RassorDirID)1, -0.05);
-        } else if (time > 5.0 && time <= 7.0) {
-            for (int i = 0; i < 4; i++) {
-                driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
-            }
-
-            driver->SetRazorMotorSpeed((RassorDirID)0, 0.0);
-            driver->SetRazorMotorSpeed((RassorDirID)1, 0.0);
-            driver->SetArmMotorSpeed((RassorDirID)0, -0.55);
-            driver->SetArmMotorSpeed((RassorDirID)1, 0.55);
-        } else if (time > 7.0 && time <= 10.0) {
-            for (int i = 0; i < 4; i++) {
-                driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
-            }
-
-            driver->SetRazorMotorSpeed((RassorDirID)0, -2.0);
-            driver->SetRazorMotorSpeed((RassorDirID)1, 2.0);
-            driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
-            driver->SetArmMotorSpeed((RassorDirID)1, 0.0);
+        for (int i = 0; i < 4; i++) {
+            driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed/3.0);
         }
+
+
+        //if (time <= 2.0) {
+        //    for (int i = 0; i < 4; i++) {
+        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 2.0);
+        //    }
+
+        //    driver->SetRazorMotorSpeed((RassorDirID)0, 2.0);
+        //    driver->SetRazorMotorSpeed((RassorDirID)1, 2.0);
+        //    driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
+        //    driver->SetArmMotorSpeed((RassorDirID)1, 0.0);
+        //} else if (time > 2.0 && time <= 5.0) {
+        //    for (int i = 0; i < 4; i++) {
+        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
+        //    }
+
+        //    driver->SetRazorMotorSpeed((RassorDirID)0, 3.14);
+        //    driver->SetRazorMotorSpeed((RassorDirID)1, -3.14);
+        //    driver->SetArmMotorSpeed((RassorDirID)0, 0.05);
+        //    driver->SetArmMotorSpeed((RassorDirID)1, -0.05);
+        //} else if (time > 5.0 && time <= 7.0) {
+        //    for (int i = 0; i < 4; i++) {
+        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
+        //    }
+
+        //    driver->SetRazorMotorSpeed((RassorDirID)0, 0.0);
+        //    driver->SetRazorMotorSpeed((RassorDirID)1, 0.0);
+        //    driver->SetArmMotorSpeed((RassorDirID)0, -0.55);
+        //    driver->SetArmMotorSpeed((RassorDirID)1, 0.55);
+        //} else if (time > 7.0 && time <= 10.0) {
+        //    for (int i = 0; i < 4; i++) {
+        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
+        //    }
+
+        //    driver->SetRazorMotorSpeed((RassorDirID)0, -2.0);
+        //    driver->SetRazorMotorSpeed((RassorDirID)1, 2.0);
+        //    driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
+        //    driver->SetArmMotorSpeed((RassorDirID)1, 0.0);
+        //}
 
 
         rover->Update();
