@@ -30,7 +30,6 @@
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/utils/ChUtilsGeometry.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
-#include "chrono/assets/ChTriangleMeshShape.h"
 #include "chrono/core/ChTimer.h"
 #include "chrono_fsi/ChSystemFsi.h"
 #include "chrono_thirdparty/filesystem/path.h"
@@ -60,20 +59,20 @@ double byDim = 0.5 + smalldis;   // byDim depending on the wheel width
 double bzDim = 0.15 + smalldis;
 
 // Size of the wheel
-double wheel_radius = 0.25;
+double wheel_radius = 0.2;
 double wheel_wide = 0.205;
 
 double wheel_slip = 0.0;
 //double wheel_vel = -0.05;
 //double wheel_AngVel = -0.7; // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
 
-double wheel_vel = -2.4;
-double wheel_AngVel = -33.5;  // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
+double wheel_vel = 0.2;
+double wheel_AngVel = 2.78;  // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
 
-double total_mass = 17.5;
+double total_mass = 2.5;
 
 // Initial Position of wheel
-ChVector<> wheel_IniPos(bxDim / 2 - wheel_radius * 1.2, 0.0, wheel_radius + bzDim/2.0 + 0.01);
+ChVector<> wheel_IniPos(-bxDim / 2 + wheel_radius * 1.2, 0.0, wheel_radius + bzDim/2.0);
 //ChVector<> wheel_IniVel(0.0, 0.0, -5.0f);
  ChVector<> wheel_IniVel(0.0, 0.0, 0.0f);
 
@@ -102,11 +101,9 @@ float render_fps = 100;
 bool verbose_fsi = true;
 bool verbose = true;
 
-std::string wheel_obj = "C:/Users/fang/Documents/RASSOR/test_32k_triangles.obj";
-//std::string drum_BCE_csvfile = "C:/Users/fang/Documents/RASSOR/preprocessing/drum_BCE.csv";
-std::string drum_BCE_csvfile = "C:/Users/fang/Documents/RASSOR/preprocessing/single_drum_0.01.csv";
+std::string drum_obj = "robot/rassor/obj/single_drum.obj";
+std::string drum_BCE_csvfile = "robot/rassor/bce/single_drum.csv";
 
-//std::string drum_BCE_csvfile = "C:/Users/fang/Documents/RASSOR/DEM_solver/ViperWheelSimple.csv";
 
 //------------------------------------------------------------------
 // Create the objects of the MBD system. Rigid bodies, and if FSI,
@@ -126,19 +123,13 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     ground->SetBodyFixed(true);
     sysMBS.AddBody(ground);
 
-    ground->GetCollisionModel()->ClearModel();
-    chrono::utils::AddBoxContainer(ground, cmaterial, ChFrame<>(), ChVector<>(bxDim, byDim, bzDim), 0.1,
-        ChVector<int>(0, 0, -1), false);
-    ground->GetCollisionModel()->BuildModel();
-    ground->SetCollide(false);
-
     // Add BCE particles attached on the walls into FSI system
     sysFSI.AddBoxContainerBCE(ground, ChFrame<>(), ChVector<>(bxDim, byDim, bzDim), ChVector<int>(2, 0, -1));
 
     // Create the wheel -- always SECOND body in the system
     auto trimesh = chrono_types::make_shared<ChTriangleMeshConnected>();
-    double scale_ratio = 1e-3;
-    trimesh->LoadWavefrontMesh(GetChronoDataFile(wheel_obj), false, true);
+    double scale_ratio = 1.f;
+    trimesh->LoadWavefrontMesh(GetChronoDataFile(drum_obj), false, true);
     trimesh->Transform(ChVector<>(0, 0, 0), ChMatrix33<>(scale_ratio));  // scale to a different size
     trimesh->RepairDuplicateVertexes(1e-9);                              // if meshes are not watertight
 
@@ -157,35 +148,33 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     mcog = ChVector<>(0.0, 0.0, 0.0);
 
     // Set the abs orientation, position and velocity
-    auto wheel = chrono_types::make_shared<ChBodyAuxRef>();
+    auto drum = chrono_types::make_shared<ChBodyAuxRef>();
     ChQuaternion<> wheel_Rot = Q_from_Euler123(ChVector<double>(0, 0, 0));
 
     // Set the COG coordinates to barycenter, without displacing the REF reference.
     // Make the COG frame a principal frame.
-    wheel->SetFrame_COG_to_REF(ChFrame<>(mcog, principal_inertia_rot));
+    drum->SetFrame_COG_to_REF(ChFrame<>(mcog, principal_inertia_rot));
 
     // Set inertia
-    wheel->SetMass(total_mass * 1.0 / 2.0);
-    wheel->SetInertiaXX(mdensity * principal_I);
+    drum->SetMass(total_mass * 1.0 / 2.0);
+    drum->SetInertiaXX(ChVector<double>(0.0058, 0.02, 0.0058));
     std::cout << "principal inertia: " << std::endl;
     std::cout << mdensity * principal_I << std::endl;
-    wheel->SetPos_dt(wheel_IniVel);
-    wheel->SetWvel_loc(ChVector<>(0.0, 0.0, 0.0));  // set an initial anular velocity (rad/s)
+    drum->SetPos_dt(wheel_IniVel);
+    drum->SetWvel_loc(ChVector<>(0.0, 0.0, 0.0));  // set an initial anular velocity (rad/s)
 
     // Set the absolute position of the body:
-    wheel->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(wheel_IniPos), ChQuaternion<>(wheel_Rot)));
-    sysMBS.AddBody(wheel);
+    drum->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(wheel_IniPos), ChQuaternion<>(wheel_Rot)));
+    sysMBS.AddBody(drum);
 
-    wheel->SetBodyFixed(false);
-    wheel->GetCollisionModel()->ClearModel();
-    wheel->GetCollisionModel()->AddTriangleMesh(cmaterial, trimesh, false, false, VNULL, ChMatrix33<>(1), 0.005);
-    wheel->GetCollisionModel()->BuildModel();
-    wheel->SetCollide(false);
+    drum->SetBodyFixed(false);
+    drum->SetCollide(false);
 
     // Add this body to the FSI system
      std::vector<ChVector<>> BCE_wheel;
      // read the drum BCE from csv file, add points to the BCE_wheel vector
-     std::ifstream file(drum_BCE_csvfile);
+     
+     std::ifstream file(GetChronoDataFile(drum_BCE_csvfile));
      std::string line;
      std::getline(file, line); // skip the first line
      while (std::getline(file, line))
@@ -200,35 +189,29 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 		 BCE_wheel.push_back(ChVector<>(values[0], values[1], values[2]));
          //std::cout << values[0] << " " << values[1] << " " << values[2] << std::endl;
 	 }
-     sysFSI.AddPointsBCE(wheel, BCE_wheel, ChFrame<>(), true);
-     sysFSI.AddFsiBody(wheel);
+     sysFSI.AddPointsBCE(drum, BCE_wheel, ChFrame<>(), true);
+     sysFSI.AddFsiBody(drum);
 
-    std::cout << "Added BCE particles for rassor wheel" << std::endl;
+    std::cout << "Added " << BCE_wheel.size() <<  " BCE particles for rassor wheel" << std::endl;
 
     // Create the chassis -- always THIRD body in the system
     auto chassis = chrono_types::make_shared<ChBody>();
     chassis->SetMass(total_mass/2.0f);
-    chassis->SetPos(wheel->GetPos());
+    chassis->SetPos(drum->GetPos());
     chassis->SetCollide(false);
     chassis->SetBodyFixed(false);
 
     // Add geometry of the chassis.
-    chassis->GetCollisionModel()->ClearModel();
-    chrono::utils::AddBoxGeometry(chassis.get(), cmaterial, ChVector<>(0.1, 0.1, 0.1), ChVector<>(0, 0, 0));
-    chassis->GetCollisionModel()->BuildModel();
     sysMBS.AddBody(chassis);
 
     // Create the axle -- always FOURTH body in the system
     auto axle = chrono_types::make_shared<ChBody>();
     axle->SetMass(total_mass * 1.0 / 2.0);
-    axle->SetPos(wheel->GetPos());
+    axle->SetPos(drum->GetPos());
     axle->SetCollide(false);
     axle->SetBodyFixed(false);
 
     // Add geometry of the axle.
-    axle->GetCollisionModel()->ClearModel();
-    chrono::utils::AddSphereGeometry(axle.get(), cmaterial, 0.5, ChVector<>(0, 0, 0));
-    axle->GetCollisionModel()->BuildModel();
     sysMBS.AddBody(axle);
 
     // Connect the chassis to the containing bin (ground) through a translational joint and create a linear actuator.
@@ -257,10 +240,10 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 
     // Connect the wheel to the axle through a engine joint.
     motor->SetName("engine_wheel_axle");
-    motor->Initialize(wheel, axle, ChFrame<>(wheel->GetPos(),
+    motor->Initialize(drum, axle, ChFrame<>(drum->GetPos(),
         chrono::Q_from_AngAxis(-CH_C_PI / 2.0, ChVector<>(1, 0, 0))));
     motor->SetAngleFunction(chrono_types::make_shared<ChFunction_Ramp>(0, wheel_AngVel));
-    //sysMBS.AddLink(motor);
+    sysMBS.AddLink(motor);
 }
 
 // =============================================================================
@@ -268,7 +251,7 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 int main(int argc, char* argv[]) {
     // The path to the Chrono data directory
     //SetChronoDataPath(CHRONO_DATA_DIR);
-    SetChronoDataPath("");
+    //SetChronoDataPath("");
 
     // Create the MBS and FSI systems
     ChSystemSMC sysMBS;
@@ -276,12 +259,16 @@ int main(int argc, char* argv[]) {
 
     sysFSI.SetVerbose(verbose_fsi);
 
-    // Use JSON file to set the FSI parameters
-    std::string inputJson = "C:/Users/fang/Documents/RASSOR/input_json/demo_FSI_SingleDrum.json";
+    sysFSI.SetArtificialViscosity(0.01, 0);
 
-    total_mass = 17.5;
+
+
+    // Use JSON file to set the FSI parameters
+    std::string inputJson = GetChronoDataFile("fsi/input_json/single_wheel_FSI_rassor.json");
+
+    //total_mass = 17.5;
     slope_angle = 0;
-    out_dir = "C:/Users/fang/Documents/RASSOR/fsi_outputs/debug";
+    out_dir = "C:/Users/fang/Documents/Rassor/fsi_outputs/test_dt_1e-4";
     //wheelfilename = "C:/Users/fang/source/nasa_singlewheel/wheel_obj/withGrousers.obj";
 
     std::cout << "total_mass: " << total_mass << "\n";
@@ -342,7 +329,7 @@ int main(int argc, char* argv[]) {
 
     // Set up the periodic boundary condition (if not, set relative larger values)
     ChVector<> cMin(-bxDim / 2 * 10, -byDim / 2 - 0.5 * iniSpacing, -bzDim * 10);
-    ChVector<> cMax( bxDim / 2 * 10,  byDim / 2 + 0.5 * iniSpacing, bzDim * 10);
+    ChVector<> cMax( bxDim / 2 * 10,  byDim / 2 + 0.5 * iniSpacing,  bzDim * 10);
     sysFSI.SetBoundaries(cMin, cMax);
 
     // Initialize the SPH particles
@@ -458,33 +445,15 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        if (time > 0.4168 && time < 0.42) {
-            std::cout << "time: " << time << std::endl;
-            std::cout << "  wheel position:         " << w_pos << std::endl;
-            std::cout << "  wheel linear velocity:  " << w_vel << std::endl;
-            std::cout << "  wheel angular velocity: " << angvel << std::endl;
-            std::cout << "  drawbar pull:           " << force << std::endl;
-            std::cout << "  wheel torque:           " << torque << std::endl;
-
-            sysMBS.EnableSolverMatrixWrite(true, "C:/Users/fang/Documents/RASSOR/build/bin/Release/matrix_solve");
-
-        }
 
         if (render && current_step % render_steps == 0) {
             if (!fsi_vis->Render())
                 break;
         }
 
-        if (time > 0.43) {
-            break;
-        }
 
     }
 
-    if (output) {
-        myFile.close();
-        myDBP_Torque.close();
-    }
 
     return 0;
 }

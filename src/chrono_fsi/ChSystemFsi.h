@@ -269,6 +269,10 @@ class CH_FSI_API ChSystemFsi {
     /// FSI bodies are the ones seen by the fluid dynamics system.
     std::vector<std::shared_ptr<ChBody>>& GetFsiBodies() const;
 
+
+    ChVector<float> ChSystemFsi::GetFsiBodyForce(int i) const;
+
+
     /// Return the FSI mesh for flexible elements.
     std::shared_ptr<fea::ChMesh> GetFsiMesh() const;
 

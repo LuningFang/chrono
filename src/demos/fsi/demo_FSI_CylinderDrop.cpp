@@ -161,13 +161,13 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     sysFSI.AddBoxContainerBCE(box,                                            //
                               ChFrame<>(ChVector<>(0, 0, bzDim / 2), QUNIT),  //
                               ChVector<>(bxDim, byDim, bzDim),                //
-                              ChVector<int>(2, 2, 2));
+                              ChVector<int>(2, 2, -1));
 
     // Create a falling cylinder
     auto cylinder = chrono_types::make_shared<ChBody>();
 
     // Set the general properties of the cylinder
-    double volume = geometry::ChCylinder::GetVolume(cyl_radius, cyl_length / 2);
+    double volume = geometry::ChCylinder::GetVolume(cyl_radius, cyl_length);
     double density = sysFSI.GetDensity() * 2.0;
     double mass = density * volume;
     ChVector<> cyl_pos = ChVector<>(0, 0, bzDim + cyl_radius + 2 * initSpace0);
@@ -333,6 +333,10 @@ int main(int argc, char* argv[]) {
             static int counter = 0;
             std::string filename = out_dir + "/vtk/cylinder." + std::to_string(counter++) + ".vtk";
             WriteCylinderVTK(filename, cyl_radius, cyl_length, sysFSI.GetFsiBodies()[0]->GetFrame_REF_to_abs(), 100);
+
+            std::cout << "time: " << time <<  ", fsi body force: " << sysFSI.GetFsiBodyForce(0) << std::endl;
+
+
         }
 
         // Render SPH particles
@@ -341,8 +345,10 @@ int main(int argc, char* argv[]) {
                 break;
         }
 
-        std::cout << "step: " << current_step << "\ttime: " << time << "\tRTF: " << sysFSI.GetRTF()
-                  << "\tcyl z: " << sysMBS.Get_bodylist()[1]->GetPos().z() << std::endl;
+        //std::cout << "step: " << current_step << "\ttime: " << time << "\tRTF: " << sysFSI.GetRTF()
+        //          << "\tcyl z: " << sysMBS.Get_bodylist()[1]->GetPos().z() << std::endl;
+
+        sysFSI.GetFsiBodies()[0]->GetAppliedForce().z();
 
         // Call the FSI solver
         sysFSI.DoStepDynamics_FSI();
