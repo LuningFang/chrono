@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
 
     //total_mass = 17.5;
     slope_angle = 0;
-    out_dir = "C:/Users/fang/Documents/Rassor/fsi_outputs/test_alpha_" + std::string(argv[1]);
+    out_dir = "single_drum_tests/alpha_" + std::string(argv[1]);
     //wheelfilename = "C:/Users/fang/source/nasa_singlewheel/wheel_obj/withGrousers.obj";
 
     std::cout << "total_mass: " << total_mass << "\n";
@@ -378,6 +378,8 @@ int main(int argc, char* argv[]) {
         myDBP_Torque.open(out_dir + "/DBP_Torque.txt", std::ios::trunc);
     }
 
+
+    #ifdef CHRONO_VSG
     // Create a run-tme visualizer
     std::shared_ptr<ChFsiVisualization> fsi_vis;
     // attach it to the FSI system
@@ -396,6 +398,7 @@ int main(int argc, char* argv[]) {
         fsi_vis->SetParticleRenderMode(ChFsiVisualization::RenderMode::SOLID);
         fsi_vis->Initialize();
     }
+    #endif  // CHRONO_VSG
 
     // Start the simulation
     unsigned int output_steps = (unsigned int)round(1 / (out_fps * dT));
@@ -455,11 +458,12 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-
+        #ifdef CHRONO_VSG
         if (render && current_step % render_steps == 0) {
             if (!fsi_vis->Render())
                 break;
         }
+        #endif
 
 
     }
