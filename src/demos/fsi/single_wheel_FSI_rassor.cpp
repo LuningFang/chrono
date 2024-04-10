@@ -170,10 +170,10 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     drum->SetBodyFixed(false);
     drum->SetCollide(false);
 
-    // Add this body to the FSI system
-     std::vector<ChVector<>> BCE_wheel;
-     // read the drum BCE from csv file, add points to the BCE_wheel vector
-     
+     // BCE drum vector to store the drum BCE
+     std::vector<ChVector<>> BCE_drum;
+
+     // read the drum BCE from csv file, add points to the BCE_drum vector     
      std::ifstream file(GetChronoDataFile(drum_BCE_csvfile));
      std::string line;
      std::getline(file, line); // skip the first line
@@ -186,13 +186,14 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
          {
 			 values.push_back(std::stod(val));
 		 }
-		 BCE_wheel.push_back(ChVector<>(values[0], values[1], values[2]));
-         //std::cout << values[0] << " " << values[1] << " " << values[2] << std::endl;
+         BCE_drum.push_back(ChVector<>(values[0], values[1], values[2]));
 	 }
-     sysFSI.AddPointsBCE(drum, BCE_wheel, ChFrame<>(), true);
+     // Now add BCE particles to the ChBody drum
+     sysFSI.AddPointsBCE(drum, BCE_drum, ChFrame<>(), true);
+     // Now add the drum to the FSI system
      sysFSI.AddFsiBody(drum);
 
-    std::cout << "Added " << BCE_wheel.size() <<  " BCE particles for rassor wheel" << std::endl;
+    std::cout << "Added " << BCE_drum.size() << " BCE particles for rassor wheel" << std::endl;
 
     // Create the chassis -- always THIRD body in the system
     auto chassis = chrono_types::make_shared<ChBody>();
@@ -249,6 +250,15 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+
+    if (argc != 2)
+    {
+		std::cout << "Usage: " << argv[0] << " <artificial viscosity>" << std::endl;
+		return 1;
+	}
+
+    double artificial_viscosity = std::stod(argv[1]);
+
     // The path to the Chrono data directory
     //SetChronoDataPath(CHRONO_DATA_DIR);
     //SetChronoDataPath("");
@@ -259,7 +269,7 @@ int main(int argc, char* argv[]) {
 
     sysFSI.SetVerbose(verbose_fsi);
 
-    sysFSI.SetArtificialViscosity(0.01, 0);
+    sysFSI.SetArtificialViscosity(artificial_viscosity, 0);
 
 
 
@@ -268,7 +278,7 @@ int main(int argc, char* argv[]) {
 
     //total_mass = 17.5;
     slope_angle = 0;
-    out_dir = "C:/Users/fang/Documents/Rassor/fsi_outputs/test_dt_1e-4";
+    out_dir = "C:/Users/fang/Documents/Rassor/fsi_outputs/test_alpha_" + std::string(argv[1]);
     //wheelfilename = "C:/Users/fang/source/nasa_singlewheel/wheel_obj/withGrousers.obj";
 
     std::cout << "total_mass: " << total_mass << "\n";
