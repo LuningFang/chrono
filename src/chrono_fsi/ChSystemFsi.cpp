@@ -769,6 +769,7 @@ void ChSystemFsi::Initialize() {
 
         cout << "  non_newtonian: " << m_paramsH->non_newtonian << endl;
         cout << "  mu_of_I : " << (int)m_paramsH->mu_of_I << endl;
+        cout << "  artificial viscosity: " << m_paramsH->Ar_vis_alpha << ", " << m_paramsH->Ar_vis_beta << endl;
         cout << "  rheology_model: " << (int)m_paramsH->rheology_model << endl;
         cout << "  ave_diam: " << m_paramsH->ave_diam << endl;
         cout << "  mu_max: " << m_paramsH->mu_max << endl;

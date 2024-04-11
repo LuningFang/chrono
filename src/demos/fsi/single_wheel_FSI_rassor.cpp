@@ -269,10 +269,6 @@ int main(int argc, char* argv[]) {
 
     sysFSI.SetVerbose(verbose_fsi);
 
-    sysFSI.SetArtificialViscosity(artificial_viscosity, 0);
-
-
-
     // Use JSON file to set the FSI parameters
     std::string inputJson = GetChronoDataFile("fsi/input_json/single_wheel_FSI_rassor.json");
 
@@ -304,7 +300,10 @@ int main(int argc, char* argv[]) {
 
     sysFSI.ReadParametersFromFile(inputJson);
     std::cout << "Done reading json file" << std::endl;
-    
+
+    // Set the artificial viscosity coefficient
+    sysFSI.SetArtificialViscosity(artificial_viscosity, 0);
+
     double gravity_G = sysFSI.Get_G_acc().z();
     ChVector<> gravity = ChVector<>(gravity_G * sin(slope_angle), 0, gravity_G * cos(slope_angle));
     sysMBS.Set_G_acc(gravity);
