@@ -40,8 +40,13 @@ class CH_ROS_API ChROSInterface {
   public:
     /// Constructor for the ChROSInterface class.
     /// @param node_name the name to set to the created node. ROS will throw an error if the node name is identical to
+<<<<<<< HEAD
     /// previously created nodes. Defaults to "chrono_ros_node".
     ChROSInterface(const std::string node_name = "chrono_ros_node");
+=======
+    /// previously created nodes. 
+    ChROSInterface(const std::string node_name);
+>>>>>>> develop
 
     /// Initialize the underlying ROS 2 node.
     /// A SingleThreadedExecutor will be created and the node will be added to it.
@@ -56,9 +61,12 @@ class CH_ROS_API ChROSInterface {
     /// other ROS component.
     rclcpp::Node::SharedPtr GetNode() { return m_node; }
 
+<<<<<<< HEAD
     /// Get the namespace to append to topic/node names
     const std::string& GetNamespace() { return m_node_name; }
 
+=======
+>>>>>>> develop
   private:
     const std::string m_node_name;
 

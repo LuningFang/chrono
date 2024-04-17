@@ -34,8 +34,8 @@
 }
 
 
-// For optional downcasting of polimorphic objects:
-%include "../chrono_downcast.i" 
+// For optional casting of polimorphic objects:
+%include "../chrono_cast.i" 
 
 // For supporting shared pointers:
 %include <std_shared_ptr.i>
@@ -49,7 +49,7 @@
 #include <vector>
 
 #include "chrono/core/ChQuaternion.h"
-#include "chrono/core/ChVector.h"
+#include "chrono/core/ChVector3.h"
 #include "chrono/solver/ChSolver.h"
 
 #include "chrono/physics/ChSystem.h"
@@ -137,8 +137,8 @@ using namespace chrono::rassor;
 %shared_ptr(chrono::ChNodeBase) 
 %shared_ptr(chrono::ChNodeXYZ) 
 %shared_ptr(chrono::ChVisualShapeTriangleMesh)
-%shared_ptr(chrono::geometry::ChTriangleMeshConnected)
-%shared_ptr(chrono::ChFunction_Recorder)
+%shared_ptr(chrono::ChTriangleMeshConnected)
+%shared_ptr(chrono::ChFunctionInterp)
 %shared_ptr(chrono::ChBezierCurve)
 %shared_ptr(chrono::ChLinkMarkers)
 
@@ -218,7 +218,7 @@ using namespace chrono::rassor;
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChClassFactory.i"
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChObject.i"
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChPhysicsItem.i"
-%import(module = "pychrono.core")  "chrono_swig/interface/core/ChVector.i"
+%import(module = "pychrono.core")  "chrono_swig/interface/core/ChVector3.i"
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChQuaternion.i"
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChCoordsys.i"
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChFrame.i"
@@ -236,8 +236,8 @@ using namespace chrono::rassor;
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChLinkBase.i"
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChLinkLock.i"
 %import(module = "pychrono.core")  "chrono_swig/interface/core/ChLinkTSDA.i"
-%import(module = "pychrono.core") "../chrono/motion_functions/ChFunction_Base.h"
-%import(module = "pychrono.core")  "chrono_swig/interface/core/ChMaterialSurface.i"
+%import(module = "pychrono.core") "../chrono/functions/ChFunctionBase.h"
+%import(module = "pychrono.core")  "chrono_swig/interface/core/ChContactMaterial.i"
 %import(module = "pychrono.core") "../chrono/fea/ChContinuumMaterial.h"
 %import(module = "pychrono.core") "../chrono/physics/ChPhysicsItem.h"
 
@@ -274,20 +274,20 @@ using namespace chrono::rassor;
 
 
 //
-// C- DOWNCASTING OF SHARED POINTERS
+// C- CASTING OF SHARED POINTERS
 // 
 // This is not automatic in Python + SWIG, except if one uses the 
 // %downcast_output_sharedptr(...) macro, as above, but this causes
 // a lot of code bloat. 
 // Alternatively, in the following we create a set of Python-side
 // functions to perform casting by hand, thank to the macro 
-// %DefSharedPtrDynamicDowncast(base,derived). 
+// %DefSharedPtrDynamicCast(base,derived). 
 // Do not specify the "chrono::" namespace before base or derived!
 // Later, in python, you can do the following:
 //  myvis = chrono.CastToChVisualizationShared(myasset)
 //  print ('Could be cast to visualization object?', !myvis.IsNull())
 
-//%DefSharedPtrDynamicDowncast2NS(chrono,chrono::fea,ChPhysicsItem,ChMesh)
+//%DefSharedPtrDynamicCast2NS(chrono,chrono::fea,ChPhysicsItem,ChMesh)
 
 
 //
@@ -322,7 +322,7 @@ using namespace chrono::rassor;
 %extend chrono::turtlebot::TurtleBot{
 		public:
 			TurtleBot(chrono::ChSystem* system,
-               const chrono::ChVector<double>& robot_pos,
+               const chrono::ChVector3d& robot_pos,
                const chrono::ChQuaternion<double>& robot_rot){
 			   
 			   auto selfpoint = std::make_shared<chrono::turtlebot::TurtleBot>(system, robot_pos, robot_rot, nullptr);

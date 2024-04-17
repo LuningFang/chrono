@@ -23,6 +23,10 @@
 
 #include <vector>
 #include <memory>
+<<<<<<< HEAD
+=======
+#include <string>
+>>>>>>> develop
 
 namespace chrono {
 namespace ros {
@@ -36,8 +40,14 @@ class ChROSHandler;
 /// Managers the ROS handlers and their registration/updates
 class CH_ROS_API ChROSManager {
   public:
+<<<<<<< HEAD
     /// Constructor for the ChROSManager creates a single ChROSInterface. To use multiple ChROSInterfaces, this class should be circumvented.
     ChROSManager();
+=======
+    /// Constructor for the ChROSManager creates a single ChROSInterface. To use multiple ChROSInterfaces, multiple
+    /// instances of this class should be used. Defaults node name is "chrono_ros_node".
+    ChROSManager(const std::string& node_name = "chrono_ros_node");
+>>>>>>> develop
 
     /// Initialize the ROS system. Prior to this, rclcpp::init() has not been called.
     void Initialize();
@@ -49,6 +59,12 @@ class CH_ROS_API ChROSManager {
     /// Register a new handler
     void RegisterHandler(std::shared_ptr<ChROSHandler> handler);
 
+<<<<<<< HEAD
+=======
+    /// Get the ChROSInterface
+    std::shared_ptr<ChROSInterface> GetInterface() { return m_interface; }
+
+>>>>>>> develop
   private:
     std::shared_ptr<ChROSInterface> m_interface;
 

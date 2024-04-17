@@ -20,6 +20,7 @@
 // =============================================================================
 
 #include "chrono/solver/ChIterativeSolverLS.h"
+#include "chrono/utils/ChUtils.h"
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -313,19 +314,16 @@ std::string rigidterrain_file("terrain/RigidPlane.json");
 ////std::string rigidterrain_file("terrain/RigidSlope20.json");
 
 // Initial vehicle position and orientation (adjust for selected terrain)
-ChVector<> initLoc(0, 0, 0.5);
-double initYaw = 20 * CH_C_DEG_TO_RAD;
+ChVector3d initLoc(0, 0, 0.5);
+double initYaw = 20 * CH_DEG_TO_RAD;
 
 // Simulation step size
 double step_size = 2e-3;
 
-// Output directory
-const std::string out_dir = GetChronoOutputPath() + "WHEELED_JSON";
-
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+    std::cout << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl;
 
     // Select vehicle model
     std::vector<std::pair<std::shared_ptr<Vehicle_Model>, std::string>> models = {
@@ -355,7 +353,7 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle system
     WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_model->VehicleJSON()), vehicle_model->ContactMethod());
-    vehicle.Initialize(ChCoordsys<>(initLoc, Q_from_AngZ(initYaw)));
+    vehicle.Initialize(ChCoordsys<>(initLoc, QuatFromAngleZ(initYaw)));
     vehicle.GetChassis()->SetFixed(false);
     vehicle.SetChassisVisualizationType(VisualizationType::MESH);
     vehicle.SetChassisRearVisualizationType(VisualizationType::PRIMITIVES);
@@ -423,7 +421,7 @@ int main(int argc, char* argv[]) {
             // Create the vehicle Irrlicht interface
             auto vis_irr = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
             vis_irr->SetWindowTitle(title);
-            vis_irr->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), vehicle_model->CameraDistance(), 0.5);
+            vis_irr->SetChaseCamera(ChVector3d(0.0, 0.0, 1.75), vehicle_model->CameraDistance(), 0.5);
             vis_irr->Initialize();
             vis_irr->AddLightDirectional();
             vis_irr->AddSkyBox();
@@ -449,13 +447,14 @@ int main(int argc, char* argv[]) {
             auto vis_vsg = chrono_types::make_shared<ChWheeledVehicleVisualSystemVSG>();
             vis_vsg->SetWindowTitle(title);
             vis_vsg->AttachVehicle(&vehicle);
-            vis_vsg->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), vehicle_model->CameraDistance(), 0.5);
-            vis_vsg->SetWindowSize(ChVector2<int>(1200, 800));
-            vis_vsg->SetWindowPosition(ChVector2<int>(100, 300));
+            vis_vsg->SetChaseCamera(ChVector3d(0.0, 0.0, 1.75), vehicle_model->CameraDistance(), 0.5);
+            vis_vsg->SetWindowSize(ChVector2i(1200, 800));
+            vis_vsg->SetWindowPosition(ChVector2i(100, 300));
             vis_vsg->SetUseSkyBox(true);
             vis_vsg->SetCameraAngleDeg(40);
             vis_vsg->SetLightIntensity(1.0f);
-            vis_vsg->SetLightDirection(1.5 * CH_C_PI_2, CH_C_PI_4);
+            vis_vsg->SetLightDirection(1.5 * CH_PI_2, CH_PI_4);
+            vis_vsg->SetShadows(true);
             vis_vsg->Initialize();
 
             // Create the interactive VSG driver system
@@ -473,7 +472,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Initialize output directories
-    std::string veh_dir = out_dir + "/" + vehicle_model->ModelName();
+    const std::string out_dir = GetChronoOutputPath() + "WHEELED_JSON";
+    const std::string veh_dir = out_dir + "/" + vehicle_model->ModelName();
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;

@@ -18,8 +18,11 @@
 
 #include "chrono_ros/handlers/ChROSHandlerUtilities.h"
 
+<<<<<<< HEAD
 #include "chrono/core/ChLog.h"
 
+=======
+>>>>>>> develop
 namespace chrono {
 namespace ros {
 
@@ -30,13 +33,24 @@ builtin_interfaces::msg::Time ChROSHandlerUtilities::GetROSTimestamp(double elap
     return timestamp;
 }
 
+<<<<<<< HEAD
+=======
+double ChROSHandlerUtilities::GetChronoTime(const builtin_interfaces::msg::Time& time) {
+    return time.sec + time.nanosec * 1e-9;
+}
+
+>>>>>>> develop
 bool ChROSHandlerUtilities::CheckROSTopicName(std::shared_ptr<ChROSInterface> interface,
                                               const std::string& topic_name) {
     try {
         std::string full_topic_name = rclcpp::expand_topic_or_service_name(topic_name, interface->GetNode()->get_name(),
                                                                            interface->GetNode()->get_namespace());
     } catch (rclcpp::exceptions::InvalidTopicNameError& e) {
+<<<<<<< HEAD
         GetLog() << "ERROR: Topic '" << topic_name.c_str() << "' is not a valid ROS topic name: " << e.what() << "\n";
+=======
+        std::cerr << "ERROR: Topic '" << topic_name << "' is not a valid ROS topic name: " << e.what() << std::endl;
+>>>>>>> develop
         return false;
     }
 

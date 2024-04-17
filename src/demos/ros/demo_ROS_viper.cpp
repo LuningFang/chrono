@@ -21,10 +21,13 @@
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBodyEasy.h"
 
+<<<<<<< HEAD
 #ifdef CHRONO_POSTPROCESS
     #include "chrono_postprocess/ChGnuPlot.h"
 #endif
 
+=======
+>>>>>>> develop
 #include "chrono/assets/ChVisualSystem.h"
 #ifdef CHRONO_IRRLICHT
     #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
@@ -52,6 +55,7 @@ ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 // -----------------------------------------------------------------------------
 
 int main(int argc, char* argv[]) {
+<<<<<<< HEAD
     GetLog() << "Copyright (c) 2023 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
     // Create the Chrono system with gravity in the negative Z direction
@@ -63,6 +67,23 @@ int main(int argc, char* argv[]) {
     auto ground = chrono_types::make_shared<ChBodyEasyBox>(30, 30, 1, 1000, true, true, ground_mat);
     ground->SetPos(ChVector<>(0, 0, -0.5));
     ground->SetBodyFixed(true);
+=======
+    std::cout << "Copyright (c) 2023 projectchrono.org\nChrono version: " << CHRONO_VERSION << std::endl << std::endl;
+
+    // Create the Chrono system with gravity in the negative Z direction
+    ChSystemNSC sys;
+    sys.SetGravitationalAcceleration(ChVector3d(0, 0, -9.81));
+
+    sys.SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
+    ChCollisionModel::SetDefaultSuggestedEnvelope(0.0025);
+    ChCollisionModel::SetDefaultSuggestedMargin(0.0025);
+
+    // Create the ground.
+    auto ground_mat = chrono_types::make_shared<ChContactMaterialNSC>();
+    auto ground = chrono_types::make_shared<ChBodyEasyBox>(30, 30, 1, 1000, true, true, ground_mat);
+    ground->SetPos(ChVector3d(0, 0, -0.5));
+    ground->SetFixed(true);
+>>>>>>> develop
     ground->GetVisualShape(0)->SetTexture(GetChronoDataFile("textures/concrete.jpg"), 60, 45);
     sys.Add(ground);
 
@@ -72,7 +93,11 @@ int main(int argc, char* argv[]) {
 
     Viper viper(&sys, ViperWheelType::RealWheel);
     viper.SetDriver(driver);
+<<<<<<< HEAD
     viper.Initialize(ChFrame<>(ChVector<>(0, 0, 0.5), QUNIT));
+=======
+    viper.Initialize(ChFrame<>(ChVector3d(0, 0, 0.5), QUNIT));
+>>>>>>> develop
 
     // Create the run-time visualization interface
 #ifndef CHRONO_IRRLICHT
@@ -96,7 +121,11 @@ int main(int argc, char* argv[]) {
             vis_irr->Initialize();
             vis_irr->AddLogo();
             vis_irr->AddSkyBox();
+<<<<<<< HEAD
             vis_irr->AddCamera(ChVector<>(3, 3, 1));
+=======
+            vis_irr->AddCamera(ChVector3d(3, 3, 1));
+>>>>>>> develop
             vis_irr->AddTypicalLights();
             vis_irr->EnableContactDrawing(ContactsDrawMode::CONTACT_DISTANCES);
             vis_irr->EnableShadows();
@@ -109,7 +138,11 @@ int main(int argc, char* argv[]) {
 #ifdef CHRONO_VSG
             auto vis_vsg = chrono_types::make_shared<ChVisualSystemVSG>();
             vis_vsg->AttachSystem(&sys);
+<<<<<<< HEAD
             vis_vsg->AddCamera(ChVector<>(3, 3, 1));
+=======
+            vis_vsg->AddCamera(ChVector3d(3, 3, 1));
+>>>>>>> develop
             vis_vsg->SetWindowTitle("Viper Rover on Rigid Terrain");
             vis_vsg->Initialize();
 
@@ -118,7 +151,11 @@ int main(int argc, char* argv[]) {
             break;
         }
         default:
+<<<<<<< HEAD
             throw ChException("Failed to initialize a visualization method.");
+=======
+            throw std::runtime_error("Failed to initialize a visualization method.");
+>>>>>>> develop
     }
 
     // ------------

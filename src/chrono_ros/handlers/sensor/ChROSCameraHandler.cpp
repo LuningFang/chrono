@@ -50,7 +50,11 @@ bool ChROSCameraHandler::Initialize(std::shared_ptr<ChROSInterface> interface) {
 
     m_publisher = interface->GetNode()->create_publisher<sensor_msgs::msg::Image>(m_topic_name, 1);
 
+<<<<<<< HEAD
     // m_image.header.frame_id = ; // TODO
+=======
+    m_image.header.frame_id = m_camera->GetName();
+>>>>>>> develop
     m_image.width = m_camera->GetWidth() / m_camera->GetSampleFactor();
     m_image.height = m_camera->GetHeight() / m_camera->GetSampleFactor();
     m_image.encoding = "rgba8";
@@ -64,7 +68,11 @@ void ChROSCameraHandler::Tick(double time) {
     auto rgba8_ptr = m_camera->GetMostRecentBuffer<UserRGBA8BufferPtr>();
     if (!rgba8_ptr->Buffer) {
         // TODO: Is this supposed to happen?
+<<<<<<< HEAD
         GetLog() << "Camera buffer is not ready. Not ticking. \n";
+=======
+        std::cout << "Camera buffer is not ready. Not ticking." << std::endl;
+>>>>>>> develop
         return;
     }
 

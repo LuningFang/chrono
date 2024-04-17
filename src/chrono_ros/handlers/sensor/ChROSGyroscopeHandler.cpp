@@ -47,7 +47,11 @@ bool ChROSGyroscopeHandler::Initialize(std::shared_ptr<ChROSInterface> interface
 
     m_publisher = interface->GetNode()->create_publisher<sensor_msgs::msg::Imu>(m_topic_name, 1);
 
+<<<<<<< HEAD
     // m_imu_msg.header.frame_id = ; // TODO
+=======
+    m_imu_msg.header.frame_id = m_imu->GetName();
+>>>>>>> develop
 
     return true;
 }
@@ -56,7 +60,11 @@ void ChROSGyroscopeHandler::Tick(double time) {
     auto imu_ptr = m_imu->GetMostRecentBuffer<UserGyroBufferPtr>();
     if (!imu_ptr->Buffer) {
         // TODO: Is this supposed to happen?
+<<<<<<< HEAD
         GetLog() << "Gyroscope buffer is not ready. Not ticking. \n";
+=======
+        std::cout << "Gyroscope buffer is not ready. Not ticking." << std::endl;
+>>>>>>> develop
         return;
     }
 
@@ -66,8 +74,31 @@ void ChROSGyroscopeHandler::Tick(double time) {
     m_imu_msg.angular_velocity.y = imu_data.Pitch;
     m_imu_msg.angular_velocity.z = imu_data.Yaw;
 
+<<<<<<< HEAD
     m_publisher->publish(m_imu_msg);
 }
 
+=======
+    // Update the covariance matrix
+    // The ChGyroscopeSensor does not currently support covariances, so we'll
+    // use the imu message to store a rolling average of the covariance
+    m_imu_msg.angular_velocity_covariance = CalculateCovariance(imu_data);
+
+    m_publisher->publish(m_imu_msg);
+}
+
+std::array<double, 9> ChROSGyroscopeHandler::CalculateCovariance(const GyroData& imu_data) {
+    std::array<double, 3> imu_data_array = {imu_data.Roll, imu_data.Pitch, imu_data.Yaw};
+
+    // Update the running average
+    for (int i = 0; i < 3; i++) 
+        m_running_average[i] += (imu_data_array[i] - m_running_average[i]) / (GetTickCount() + 1);
+
+    // Calculate and return the covariance
+    auto count = (GetTickCount() > 1 ? GetTickCount() - 1 : 1);  // Avoid divide by zero (if only one tick, count = 1)
+    return ChROSSensorHandlerUtilities::CalculateCovariance(imu_data_array, m_running_average, count);
+}
+
+>>>>>>> develop
 }  // namespace ros
 }  // namespace chrono

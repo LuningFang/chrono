@@ -23,15 +23,26 @@ import pychrono.ros as chros
 def main():
     # Create Chrono system
     system = ch.ChSystemNSC()
+<<<<<<< HEAD
     system.Set_G_acc(ch.ChVectorD(0, 0, -9.81))
+=======
+    system.SetGravitationalAcceleration(ch.ChVector3d(0, 0, -9.81))
+>>>>>>> develop
     ch.ChCollisionModel.SetDefaultSuggestedEnvelope(0.0025)
     ch.ChCollisionModel.SetDefaultSuggestedMargin(0.0025)
 
     # Create ground body
+<<<<<<< HEAD
     ground_mat = ch.ChMaterialSurfaceNSC()
     ground = ch.ChBodyEasyBox(20, 20, 1, 1000, True, True, ground_mat)
     ground.SetPos(ch.ChVectorD(0, 0, -1))
     ground.SetBodyFixed(True)
+=======
+    ground_mat = ch.ChContactMaterialNSC()
+    ground = ch.ChBodyEasyBox(20, 20, 1, 1000, True, True, ground_mat)
+    ground.SetPos(ch.ChVector3d(0, 0, -1))
+    ground.SetFixed(True)
+>>>>>>> develop
     ground.GetVisualShape(0).SetTexture(ch.GetChronoDataFile("textures/concrete.jpg"))
     system.Add(ground)
 
@@ -39,10 +50,17 @@ def main():
     driver = robot.ViperDCMotorControl()
     rover = robot.Viper(system)
     rover.SetDriver(driver)
+<<<<<<< HEAD
     rover.Initialize(ch.ChFrameD(ch.ChVectorD(0, -0.2, 0), ch.ChQuaternionD(1, 0, 0, 0)))
 
     # Create ROS manager
     ros_manager = chros.ChROSManager()
+=======
+    rover.Initialize(ch.ChFramed(ch.ChVector3d(0, -0.2, 0), ch.ChQuaterniond(1, 0, 0, 0)))
+
+    # Create ROS manager
+    ros_manager = chros.ChROSPythonManager()
+>>>>>>> develop
     ros_manager.RegisterHandler(chros.ChROSClockHandler())
     ros_manager.RegisterHandler(chros.ChROSViperDCMotorControlHandler(25, driver, "~/input/driver_inputs"))
     ros_manager.RegisterHandler(chros.ChROSBodyHandler(25, rover.GetChassis().GetBody(), "~/output/viper/state"))

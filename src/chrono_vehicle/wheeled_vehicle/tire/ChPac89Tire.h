@@ -75,7 +75,7 @@ class CH_VEHICLE_API ChPac89Tire : public ChForceElementTire {
 
     /// Get the camber angle used in Pac89 (expressed in radians).
     /// The reported value will be similar to that reported by ChTire::GetCamberAngle.
-    double GetCamberAngle_internal() { return m_gamma * CH_C_DEG_TO_RAD; }
+    double GetCamberAngle_internal() { return m_gamma * CH_DEG_TO_RAD; }
 
   protected:
     /// Set the parameters in the Pac89 model.
@@ -91,6 +91,9 @@ class CH_VEHICLE_API ChPac89Tire : public ChForceElementTire {
     double m_mu;
     /// Tire reference friction
     double m_mu0;
+
+    double m_frblend_begin{1};
+    double m_frblend_end{3};
 
     /// Pac89 tire model parameters
     double m_unloaded_radius;
@@ -145,6 +148,9 @@ class CH_VEHICLE_API ChPac89Tire : public ChForceElementTire {
         double C15;
         double C16;
         double C17;
+        // extra parameters for stand-still/low speed case
+        double sigma0{100000.0};  ///< bristle stiffness for Dahl friction model
+        double sigma1{5000.0};    ///< bristle damping for Dahl friction model
     };
 
     PacCoeff m_PacCoeff;
@@ -160,6 +166,8 @@ class CH_VEHICLE_API ChPac89Tire : public ChForceElementTire {
     /// Advance the state of this tire by the specified time step.
     virtual void Advance(double step) override;
 
+    void CombinedCoulombForces(double& fx, double& fy, double fz, double muscale);
+
     struct TireStates {
         double cp_long_slip;     // Contact Path - Longitudinal Slip State (Kappa)
         double cp_side_slip;     // Contact Path - Side Slip State (Alpha)
@@ -168,7 +176,9 @@ class CH_VEHICLE_API ChPac89Tire : public ChForceElementTire {
         double vsy;              // Lateral slip velocity = Lateral velocity
         double omega;            // Wheel angular velocity about its spin axis
         double R_eff;            // Effective Radius
-        ChVector<> disc_normal;  //(temporary for debug)
+        double brx{0};           // bristle deformation x
+        double bry{0};           // bristle deformation y
+        ChVector3d disc_normal;  //(temporary for debug)
     };
 
     TireStates m_states;

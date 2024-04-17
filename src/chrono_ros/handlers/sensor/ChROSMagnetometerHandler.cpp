@@ -48,7 +48,11 @@ bool ChROSMagnetometerHandler::Initialize(std::shared_ptr<ChROSInterface> interf
 
     m_publisher = interface->GetNode()->create_publisher<sensor_msgs::msg::MagneticField>(m_topic_name, 1);
 
+<<<<<<< HEAD
     m_mag_msg.header.frame_id = m_imu->GetParent()->GetName();
+=======
+    m_mag_msg.header.frame_id = m_imu->GetName();
+>>>>>>> develop
 
     return true;
 }
@@ -57,7 +61,11 @@ void ChROSMagnetometerHandler::Tick(double time) {
     auto imu_ptr = m_imu->GetMostRecentBuffer<UserMagnetBufferPtr>();
     if (!imu_ptr->Buffer) {
         // TODO: Is this supposed to happen?
+<<<<<<< HEAD
         GetLog() << "Magnetometer buffer is not ready. Not ticking. \n";
+=======
+        std::cout << "Magnetometer buffer is not ready. Not ticking." << std::endl;
+>>>>>>> develop
         return;
     }
 
@@ -67,8 +75,31 @@ void ChROSMagnetometerHandler::Tick(double time) {
     m_mag_msg.magnetic_field.y = imu_data.Y;
     m_mag_msg.magnetic_field.z = imu_data.Z;
 
+<<<<<<< HEAD
     m_publisher->publish(m_mag_msg);
 }
 
+=======
+    // Update the covariance matrix
+    // The ChMagnetometerSensor does not currently support covariances, so we'll
+    // use the imu message to store a rolling average of the covariance
+    m_mag_msg.magnetic_field_covariance = CalculateCovariance(imu_data);
+
+    m_publisher->publish(m_mag_msg);
+}
+
+std::array<double, 9> ChROSMagnetometerHandler::CalculateCovariance(const MagnetData& imu_data) {
+    std::array<double, 3> imu_data_array = {imu_data.X, imu_data.Y, imu_data.Z};
+
+    // Update the running average
+    for (int i = 0; i < 3; i++)
+        m_running_average[i] += (imu_data_array[i] - m_running_average[i]) / (GetTickCount() + 1);
+
+    // Calculate and return the covariance
+    auto count = (GetTickCount() > 1 ? GetTickCount() - 1 : 1);  // Avoid divide by zero (if only one tick, count = 1)
+    return ChROSSensorHandlerUtilities::CalculateCovariance(imu_data_array, m_running_average, count);
+}
+
+>>>>>>> develop
 }  // namespace ros
 }  // namespace chrono
