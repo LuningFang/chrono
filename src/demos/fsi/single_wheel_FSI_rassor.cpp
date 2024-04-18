@@ -211,11 +211,13 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     axle->SetFixed(false);
 
     // Add geometry of the axle.
+    //chrono::utils::AddSphereGeometry(axle.get(), cmaterial, 0.5, ChVector3d(0, 0, 0));
+
     sysMBS.AddBody(axle);
 
     // Connect the chassis to the containing bin (ground) through a translational joint and create a linear actuator.
     auto prismatic1 = chrono_types::make_shared<ChLinkLockPrismatic>();
-    prismatic1->Initialize(ground, chassis, ChFrame<>(chassis->GetPos(), QuatFromAngleZ(CH_PI_2)));
+    prismatic1->Initialize(ground, chassis, ChFrame<>(chassis->GetPos(), QuatFromAngleY(CH_PI_2)));
     prismatic1->SetName("prismatic_chassis_ground");
     sysMBS.AddLink(prismatic1);
 
