@@ -36,10 +36,7 @@ void ChROSHandler::Update(double time, double step) {
     m_time_elapsed_since_last_tick -= frame_time;
 
     Tick(time);
-<<<<<<< HEAD
-=======
     m_tick_count++;
->>>>>>> develop
 }
 
 }  // namespace ros

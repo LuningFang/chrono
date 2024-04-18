@@ -9,17 +9,10 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-<<<<<<< HEAD
-// Authors: Sriram Ashokkumar
-// =============================================================================
-//
-// Handler responsible for publishing information about a ChBody
-=======
 // Authors: Aaron Young
 // =============================================================================
 //
 // Handler responsible for publishing transform (tf) information
->>>>>>> develop
 //
 // =============================================================================
 
@@ -27,18 +20,6 @@
 #define CH_ROS_TF_HANDLER_H
 
 #include "chrono_ros/ChROSHandler.h"
-<<<<<<< HEAD
-#include "chrono_ros/handlers/ChROSHandlerUtilities.h"
-#include "chrono_sensor/sensors/ChLidarSensor.h"
-#include "geometry_msgs/msg/transform_stamped.hpp"
-#include "tf2_msgs/msg/tf_message.hpp"
-
-
-#include "chrono_ros_interfaces/msg/body.hpp"
-
-#include "chrono/physics/ChBody.h"
-
-=======
 
 #include "chrono/physics/ChBody.h"
 
@@ -55,34 +36,12 @@
 #include <utility>
 #include <variant>
 
->>>>>>> develop
 namespace chrono {
 namespace ros {
 
 /// @addtogroup ros_handlers
 /// @{
 
-<<<<<<< HEAD
-/// This handler is responsible for publishing state information about a ChBody
-class ChROSTFHandler : public ChROSHandler {
-  public:
-    /// Constructor. body_name is used as the prefix to in the ROS topic.
-    ChROSTFHandler(double update_rate, std::shared_ptr<chrono::sensor::ChLidarSensor> lidar, std::shared_ptr<ChBody> body, const std::string& topic_name);
-
-    /// Initializes the handler. Creates a publisher for the body data on the topic "~/output/<body_name>/state"
-    virtual bool Initialize(std::shared_ptr<ChROSInterface> interface) override;
-
-  protected:
-    virtual void Tick(double time) override;
-
-  private:
-    std::shared_ptr<ChBody> m_body;  ///< The body to publish information about
-    std::shared_ptr<chrono::sensor::ChLidarSensor> m_lidar;
-    const std::string m_topic_name;          ///< The topic name to publish the body information to
-    geometry_msgs::msg::TransformStamped m_msg;  ///< The message to publish
-    rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr
-        m_publisher;  ///< The publisher which data is published through
-=======
 /// @brief This handler is responsible for publishing transform (tf) information. For more information on the use of tf
 /// in ROS, see the tf2_ros documentation.
 class ChROSTFHandler : public ChROSHandler {
@@ -139,7 +98,6 @@ class ChROSTFHandler : public ChROSHandler {
     std::vector<std::pair<std::shared_ptr<chrono::ChBody>, ChROSTransform>> m_transforms;  ///< The transforms to publish
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;  ///< The tf broadcaster
->>>>>>> develop
 };
 
 /// @} ros_handlers

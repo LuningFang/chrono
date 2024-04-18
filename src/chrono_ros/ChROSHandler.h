@@ -38,21 +38,11 @@ namespace ros {
 /// A derived class is implemented to define logic specific to a desired output.
 class CH_ROS_API ChROSHandler {
   public:
-<<<<<<< HEAD
-    /// Constructor for the ChROSHandler
-    /// @param update_rate Update rate with which the handler should tick relative to the simulation clock. NOTE: A
-    /// update_rate of 0 indicates tick should be called on each update of the simulation.
-    explicit ChROSHandler(double update_rate);
-
-    /// Initializes the handler. Must be implemented by derived classes. This is called after rclcpp::init().
-    ///         Here the underlying ROS objects (e.g. publisher, subscription) should be created.
-=======
     /// Destructor for the ChROSHandler
     virtual ~ChROSHandler() = default;
 
     /// Initializes the handler. Must be implemented by derived classes. This is called after rclcpp::init().
     ///   Here the underlying ROS objects (e.g. publisher, subscription) should be created.
->>>>>>> develop
     /// @param interface The interface to the ROS node
     virtual bool Initialize(std::shared_ptr<ChROSInterface> interface) = 0;
 
@@ -64,9 +54,6 @@ class CH_ROS_API ChROSHandler {
     /// Get the period which this handler operates at
     const double GetUpdateRate() const { return m_update_rate; }
 
-<<<<<<< HEAD
-  protected:
-=======
     /// Get the number of times Tick() has been called
     const uint64_t GetTickCount() const { return m_tick_count; }
 
@@ -76,18 +63,13 @@ class CH_ROS_API ChROSHandler {
     ///   update_rate of 0 indicates tick should be called on each update of the simulation.
     explicit ChROSHandler(double update_rate);
 
->>>>>>> develop
     /// Derived class must implement this function.
     /// @param time the current simulation time
     virtual void Tick(double time) = 0;
 
   private:
     const double m_update_rate;  ///< Update rate of the handler
-<<<<<<< HEAD
-
-=======
     uint64_t m_tick_count;  ///< Number of times Tick() has been called
->>>>>>> develop
     double m_time_elapsed_since_last_tick;  ///< Time elapsed since last tick
 };
 
