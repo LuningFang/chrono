@@ -23,22 +23,6 @@
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBodyEasy.h"
 
-#include "chrono_sensor/sensors/ChSegmentationCamera.h"
-#include "chrono_sensor/ChSensorManager.h"
-#include "chrono_sensor/filters/ChFilterAccess.h"
-#include "chrono_sensor/filters/ChFilterGrayscale.h"
-#include "chrono_sensor/filters/ChFilterSave.h"
-#include "chrono_sensor/filters/ChFilterVisualize.h"
-#include "chrono_sensor/filters/ChFilterCameraNoise.h"
-#include "chrono_sensor/filters/ChFilterImageOps.h"
-
-#include "chrono_sensor/filters/ChFilterAccess.h"
-#include "chrono_sensor/filters/ChFilterPCfromDepth.h"
-#include "chrono_sensor/filters/ChFilterVisualize.h"
-#include "chrono_sensor/filters/ChFilterVisualizePointCloud.h"
-#include "chrono_sensor/filters/ChFilterLidarReduce.h"
-#include "chrono_sensor/filters/ChFilterLidarNoise.h"
-#include "chrono_sensor/filters/ChFilterSavePtCloud.h"
 
 #include "chrono/physics/ChInertiaUtils.h"
 
@@ -58,8 +42,6 @@ using namespace chrono::vsg3d;
 
 using namespace chrono;
 using namespace chrono::rassor;
-using namespace chrono::sensor;
-using namespace chrono::geometry;
 
 // -----------------------------------------------------------------------------
 
@@ -77,7 +59,7 @@ double time_step = 1e-3;
 
 // -----------------------------------------------------------------------------
 
-std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_method) {
+std::shared_ptr<ChContactMaterial> CustomWheelMaterial(ChContactMethod contact_method) {
     float mu = 0.4f;   // coefficient of friction
     float cr = 0.2f;   // coefficient of restitution
     float Y = 2e7f;    // Young's modulus
@@ -89,13 +71,13 @@ std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_m
 
     switch (contact_method) {
         case ChContactMethod::NSC: {
-            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            auto matNSC = chrono_types::make_shared<ChContactMaterialNSC>();
             matNSC->SetFriction(mu);
             matNSC->SetRestitution(cr);
             return matNSC;
         }
         case ChContactMethod::SMC: {
-            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            auto matSMC = chrono_types::make_shared<ChContactMaterialSMC>();
             matSMC->SetFriction(mu);
             matSMC->SetRestitution(cr);
             matSMC->SetYoungModulus(Y);
@@ -107,26 +89,26 @@ std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_m
             return matSMC;
         }
         default:
-            return std::shared_ptr<ChMaterialSurface>();
+            return std::shared_ptr<ChContactMaterial>();
     }
 }
 
 int main(int argc, char* argv[]) {
-    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+    std::cout << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
     // Create the Chrono system with gravity in the negative Z direction
     ChSystemNSC sys;
-    sys.Set_G_acc(ChVector<>(0, 0, -9.81));
+    sys.SetGravitationalAcceleration(ChVector3d(0, 0, -9.81));
 
     sys.SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
     ChCollisionModel::SetDefaultSuggestedEnvelope(0.0025);
     ChCollisionModel::SetDefaultSuggestedMargin(0.0025);
 
     // Create the ground.
-    auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    auto ground_mat = chrono_types::make_shared<ChContactMaterialNSC>();
     auto ground = chrono_types::make_shared<ChBodyEasyBox>(30, 30, 1, 100, true, true, ground_mat);
-    ground->SetPos(ChVector<>(0, 0, -0.5));
-    ground->SetBodyFixed(true);
+    ground->SetPos(ChVector3d(0, 0, -0.5));
+    ground->SetFixed(true);
     ground->GetVisualShape(0)->SetTexture(GetChronoDataFile("textures/concrete.jpg"), 60, 45);
     sys.Add(ground);
 
@@ -138,7 +120,7 @@ int main(int argc, char* argv[]) {
     if (use_custom_mat)
         rassor.SetWheelContactMaterial(CustomWheelMaterial(ChContactMethod::NSC));
 
-    rassor.Initialize(ChFrame<>(ChVector<>(0, 0, 0.5), QUNIT));
+    rassor.Initialize(ChFrame<>(ChVector3d(0, 0, 0.5), QUNIT));
     // Create the run-time visualization interface
 #ifndef CHRONO_IRRLICHT
     if (vis_type == ChVisualSystem::Type::IRRLICHT)
@@ -161,7 +143,7 @@ int main(int argc, char* argv[]) {
             vis_irr->Initialize();
             vis_irr->AddLogo();
             vis_irr->AddSkyBox();
-            vis_irr->AddCamera(ChVector<>(1.5, 1.5, 0.6));
+            vis_irr->AddCamera(ChVector3d(1.5, 1.5, 0.6));
             vis_irr->AddTypicalLights();
             vis_irr->EnableContactDrawing(ContactsDrawMode::CONTACT_DISTANCES);
             vis_irr->EnableShadows();

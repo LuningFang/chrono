@@ -38,7 +38,6 @@
 
 using namespace chrono;
 using namespace chrono::fsi;
-using namespace chrono::geometry;
 using namespace chrono::rassor;
 
 
@@ -57,7 +56,7 @@ double byDim = 1.6;
 double bzDim = 0.1;
 
 // Rover initial location
-ChVector<> init_loc(-bxDim / 2.0 + 1.0, 0, bzDim + 0.25);
+ChVector3d init_loc(-bxDim / 2.0 + 1.0, 0, bzDim + 0.25);
 
 // Simulation time and stepsize
 double total_time = 10.0;
@@ -86,10 +85,10 @@ double rover_velocity_array[5] = {0.05, 0.1, 0.15, 0.2, 0.3};
 double bucket_omega_array[5]   = {0.7, 1.39, 2.09, 2.78, 4.17};
 
 
-std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_method);
+std::shared_ptr<ChContactMaterial> CustomWheelMaterial(ChContactMethod contact_method);
 // Forward declaration of helper functions
 void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI);
-std::vector<ChVector<>> LoadSolidPhaseBCE(std::string filename);
+std::vector<ChVector3d> LoadSolidPhaseBCE(std::string filename);
 bool CreateSubDirectories(std::string out_dir);
 
 int main(int argc, char* argv[]) {
@@ -119,9 +118,9 @@ int main(int argc, char* argv[]) {
     ChSystemNSC sysMBS;
     ChSystemFsi sysFSI(&sysMBS);
 
-    ChVector<> gravity = ChVector<>(0, 0, -9.81);
-    sysMBS.Set_G_acc(gravity);
-    sysFSI.Set_G_acc(gravity);
+    ChVector3d gravity = ChVector3d(0, 0, -9.81);
+    sysMBS.SetGravitationalAcceleration(gravity);
+    sysFSI.SetGravitationalAcceleration(gravity);
 
     // Read JSON file with simulation parameters
     std::string inputJson = GetChronoDataFile("fsi/input_json/demo_FSI_Rassor_granular_NSC.json");
@@ -145,7 +144,7 @@ int main(int argc, char* argv[]) {
     sysFSI.SetStepSize(dT);
 
     // Set the simulation domain size
-    sysFSI.SetContainerDim(ChVector<>(bxDim, byDim, bzDim));
+    sysFSI.SetContainerDim(ChVector3d(bxDim, byDim, bzDim));
 
     // Set SPH discretization type, consistent or inconsistent
     sysFSI.SetDiscreType(false, false);
@@ -158,18 +157,18 @@ int main(int argc, char* argv[]) {
 
     // Set the periodic boundary condition
     double initSpace0 = sysFSI.GetInitialSpacing();
-    ChVector<> cMin(-bxDim / 2 * 2, -byDim / 2 - 0.5 * iniSpacing, -bzDim * 10);
-    ChVector<> cMax( bxDim / 2 * 2,  byDim / 2 + 0.5 * iniSpacing,   bzDim * 20);
+    ChVector3d cMin(-bxDim / 2 * 2, -byDim / 2 - 0.5 * iniSpacing, -bzDim * 10);
+    ChVector3d cMax( bxDim / 2 * 2,  byDim / 2 + 0.5 * iniSpacing,   bzDim * 20);
     sysFSI.SetBoundaries(cMin, cMax);
 
     // Set simulation data output length
     sysFSI.SetOutputLength(0);
 
     // Create an initial box for the terrain patch
-    chrono::utils::GridSampler<> sampler(initSpace0);
-    ChVector<> boxCenter(0, 0, bzDim / 2);
-    ChVector<> boxHalfDim(bxDim / 2, byDim / 2, bzDim / 2);
-    std::vector<ChVector<>> points = sampler.SampleBox(boxCenter, boxHalfDim);
+    chrono::utils::ChGridSampler<> sampler(initSpace0);
+    ChVector3d boxCenter(0, 0, bzDim / 2);
+    ChVector3d boxHalfDim(bxDim / 2, byDim / 2, bzDim / 2);
+    std::vector<ChVector3d> points = sampler.SampleBox(boxCenter, boxHalfDim);
 
     // Add SPH particles from the sampler points to the FSI system
     std::cout << "Generate SPH particles (" << points.size() << ")" << std::endl;
@@ -178,9 +177,9 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < numPart; i++) {
         double pre_ini = sysFSI.GetDensity() * gz * (-points[i].z() + bzDim);
         sysFSI.AddSPHParticle(points[i], sysFSI.GetDensity(), 0, sysFSI.GetViscosity(),
-                              ChVector<>(0),         // initial velocity
-                              ChVector<>(-pre_ini),  // tauxxyyzz
-                              ChVector<>(0)          // tauxyxzyz
+                              ChVector3d(0),         // initial velocity
+                              ChVector3d(-pre_ini),  // tauxxyyzz
+                              ChVector3d(0)          // tauxyxzyz
         );
     }
 
@@ -211,7 +210,7 @@ int main(int argc, char* argv[]) {
 
         visFSI->SetTitle("Rassor on CRM terrain");
         visFSI->SetSize(1280, 720);
-        visFSI->AddCamera(ChVector<>(0, -3 * byDim, bzDim), ChVector<>(0, 0, 0));
+        visFSI->AddCamera(ChVector3d(0, -3 * byDim, bzDim), ChVector3d(0, 0, 0));
         visFSI->SetCameraMoveScale(1.0f);
         visFSI->EnableBoundaryMarkers(true);
         visFSI->EnableRigidBodyMarkers(false);
@@ -229,7 +228,7 @@ int main(int argc, char* argv[]) {
     double time = 0.0;
     int current_step = 0;
 
-    auto body = sysMBS.Get_bodylist()[1];
+    auto body = sysMBS.GetBodies()[1];
 
     ChTimer timer;
     while (time < total_time) {
@@ -293,7 +292,7 @@ int main(int argc, char* argv[]) {
             if (output && current_step % output_steps == 0) {
                 std::cout << current_step << "  time: " << time << "  sim. time: " << timer() << std::endl;
                 std::cout << "  pos: " << body->GetPos() << std::endl;
-                std::cout << "  vel: " << body->GetPos_dt() << std::endl;
+                std::cout << "  vel: " << body->GetPosDt() << std::endl;
 
                 sysFSI.PrintParticleToFile(out_dir + "/particles");
                 sysFSI.PrintFsiInfoToFile(out_dir + "/fsi", time);
@@ -327,8 +326,8 @@ int main(int argc, char* argv[]) {
 void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
     // Create a body for the rigid soil container
     auto box = chrono_types::make_shared<ChBodyEasyBox>(10, 10, 0.02, 1000, false, false);
-    box->SetPos(ChVector<>(0, 0, 0));
-    box->SetBodyFixed(true);
+    box->SetPos(ChVector3d(0, 0, 0));
+    box->SetFixed(true);
     sysMBS.Add(box);
 
     // Get the initial SPH particle spacing
@@ -336,9 +335,9 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
 
     // Fluid-Solid Coupling at the walls via BCE particles
     sysFSI.AddBoxContainerBCE(box,                                        //
-                              ChFrame<>(ChVector<>(0, 0, bzDim), QUNIT),  //
-                              ChVector<>(bxDim, byDim, 2 * bzDim),        //
-                              ChVector<int>(2, 0, -1));
+                              ChFrame<>(ChVector3d(0, 0, bzDim), QUNIT),  //
+                              ChVector3d(bxDim, byDim, 2 * bzDim),        //
+                              ChVector3i(2, 0, -1));
 
     driver = chrono_types::make_shared<RassorSpeedDriver>(1.0);
     rover = chrono_types::make_shared<Rassor>(&sysMBS, wheel_type);
@@ -347,7 +346,7 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
     rover->Initialize(ChFrame<>(init_loc, QUNIT));
 
 
-    std::vector<ChVector<>> BCE_wheel;
+    std::vector<ChVector3d> BCE_wheel;
     BCE_wheel = LoadSolidPhaseBCE(GetChronoDataFile("robot/rassor/bce/rassor_wheel.csv"));
     std::cout << "BCE wheel len:" << BCE_wheel.size() << std::endl;
 
@@ -369,20 +368,20 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
 
         sysFSI.AddFsiBody(wheel_body);
         if (i == 0 || i == 2) {
-            sysFSI.AddPointsBCE(wheel_body, BCE_wheel, ChFrame<>(VNULL, Q_from_AngZ(CH_C_PI)), true);
+            sysFSI.AddPointsBCE(wheel_body, BCE_wheel, ChFrame<>(VNULL, QuatFromAngleZ(CH_PI)), true);
         } else {
             sysFSI.AddPointsBCE(wheel_body, BCE_wheel, ChFrame<>(VNULL, QUNIT), true);
         }
     }
 
-    std::vector<ChVector<>> BCE_razor_back;
+    std::vector<ChVector3d> BCE_razor_back;
     BCE_razor_back = LoadSolidPhaseBCE(GetChronoDataFile("robot/rassor/bce/rassor_drum.csv"));
     std::cout << "BCE Razor len:" << BCE_razor_back.size() << std::endl;
 
     // now create vector BCE_razor_front, it is the mirrored version of BCE_razor_back, where x value is flipped
-    std::vector<ChVector<>> BCE_razor_front;
+    std::vector<ChVector3d> BCE_razor_front;
     for (int i = 0; i < BCE_razor_back.size(); i++) {
-        BCE_razor_front.push_back(ChVector<>(-BCE_razor_back[i].x(), BCE_razor_back[i].y(), BCE_razor_back[i].z()));
+        BCE_razor_front.push_back(ChVector3d(-BCE_razor_back[i].x(), BCE_razor_back[i].y(), BCE_razor_back[i].z()));
     }
 
     // Add BCE particles and mesh of razor to the system
@@ -416,9 +415,9 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
     }
 }
 
-std::vector<ChVector<>> LoadSolidPhaseBCE(std::string filename) {
+std::vector<ChVector3d> LoadSolidPhaseBCE(std::string filename) {
     std::ifstream file(filename);
-    std::vector<ChVector<>> points;
+    std::vector<ChVector3d> points;
     std::string line;
 
     // Check if the file is open
@@ -439,7 +438,7 @@ std::vector<ChVector<>> LoadSolidPhaseBCE(std::string filename) {
             point.push_back(std::stof(value));
         }
 
-        ChVector<> pt_vec;
+        ChVector3d pt_vec;
         pt_vec.x() = point[0];
         pt_vec.y() = point[1];
         pt_vec.z() = point[2];
@@ -450,7 +449,7 @@ std::vector<ChVector<>> LoadSolidPhaseBCE(std::string filename) {
     return points;
 }
 
-std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_method) {
+std::shared_ptr<ChContactMaterial> CustomWheelMaterial(ChContactMethod contact_method) {
     float mu = 0.4f;   // coefficient of friction
     float cr = 0.2f;   // coefficient of restitution
     float Y = 2e7f;    // Young's modulus
@@ -462,13 +461,13 @@ std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_m
 
     switch (contact_method) {
         case ChContactMethod::NSC: {
-            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            auto matNSC = chrono_types::make_shared<ChContactMaterialNSC>();
             matNSC->SetFriction(mu);
             matNSC->SetRestitution(cr);
             return matNSC;
         }
         case ChContactMethod::SMC: {
-            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            auto matSMC = chrono_types::make_shared<ChContactMaterialSMC>();
             matSMC->SetFriction(mu);
             matSMC->SetRestitution(cr);
             matSMC->SetYoungModulus(Y);
@@ -480,7 +479,7 @@ std::shared_ptr<ChMaterialSurface> CustomWheelMaterial(ChContactMethod contact_m
             return matSMC;
         }
         default:
-            return std::shared_ptr<ChMaterialSurface>();
+            return std::shared_ptr<ChContactMaterial>();
     }
 }
 
