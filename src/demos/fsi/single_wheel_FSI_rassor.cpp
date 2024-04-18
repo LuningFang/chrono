@@ -42,7 +42,6 @@
 // Chrono namespaces
 using namespace chrono;
 using namespace chrono::fsi;
-using namespace chrono::geometry;
 
 
 // Physical properties of terrain particles
@@ -72,9 +71,9 @@ double wheel_AngVel = 2.78;  // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear vel
 double total_mass = 2.5;
 
 // Initial Position of wheel
-ChVector<> wheel_IniPos(-bxDim / 2 + wheel_radius * 1.2, 0.0, wheel_radius + bzDim/2.0);
+ChVector3d wheel_IniPos(-bxDim / 2 + wheel_radius * 1.2, 0.0, wheel_radius + bzDim/2.0);
 //ChVector<> wheel_IniVel(0.0, 0.0, -5.0f);
- ChVector<> wheel_IniVel(0.0, 0.0, 0.0f);
+ChVector3d wheel_IniVel(0.0, 0.0, 0.0f);
 
 // Simulation time and stepsize
 //double total_time = 5.0;
@@ -83,7 +82,7 @@ double total_time = 10;
 double dT;
 
 // linear actuator and angular actuator
-auto actuator = chrono_types::make_shared<ChLinkLinActuator>();
+auto actuator = chrono_types::make_shared<ChLinkLockLinActuator>();
 auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
 
 // Save data as csv files to see the results off-line using Paraview
@@ -111,7 +110,7 @@ std::string drum_BCE_csvfile = "robot/rassor/bce/single_drum.csv";
 //------------------------------------------------------------------
 void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     // Common contact material
-    auto cmaterial = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    auto cmaterial = chrono_types::make_shared<ChContactMaterialSMC>();
     cmaterial->SetYoungModulus(1e8);
     cmaterial->SetFriction(0.9f);
     cmaterial->SetRestitution(0.4f);
@@ -119,59 +118,58 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 
     // Create a container -- always FIRST body in the system
     auto ground = chrono_types::make_shared<ChBody>();
-    ground->SetIdentifier(-1);
-    ground->SetBodyFixed(true);
+    ground->SetFixed(true);
     sysMBS.AddBody(ground);
 
     // Add BCE particles attached on the walls into FSI system
-    sysFSI.AddBoxContainerBCE(ground, ChFrame<>(), ChVector<>(bxDim, byDim, bzDim), ChVector<int>(2, 0, -1));
+    sysFSI.AddBoxContainerBCE(ground, ChFrame<>(), ChVector3d(bxDim, byDim, bzDim), ChVector3i(2, 0, -1));
 
     // Create the wheel -- always SECOND body in the system
     auto trimesh = chrono_types::make_shared<ChTriangleMeshConnected>();
     double scale_ratio = 1.f;
     trimesh->LoadWavefrontMesh(GetChronoDataFile(drum_obj), false, true);
-    trimesh->Transform(ChVector<>(0, 0, 0), ChMatrix33<>(scale_ratio));  // scale to a different size
+    trimesh->Transform(ChVector3d(0, 0, 0), ChMatrix33<>(scale_ratio));  // scale to a different size
     trimesh->RepairDuplicateVertexes(1e-9);                              // if meshes are not watertight
 
     // Compute mass inertia from mesh
     double mmass;
     double mdensity = 1500.0;
-    ChVector<> mcog;
+    ChVector3d mcog;
     ChMatrix33<> minertia;
     trimesh->ComputeMassProperties(true, mmass, mcog, minertia);
     ChMatrix33<> principal_inertia_rot;
-    ChVector<> principal_I;
+    ChVector3d principal_I;
     ChInertiaUtils::PrincipalInertia(minertia, principal_I, principal_inertia_rot);
 
     // look into principal inertia computation!!! why it's so small!!!!
     principal_I.x() = principal_I.z();
-    mcog = ChVector<>(0.0, 0.0, 0.0);
+    mcog = ChVector3d(0.0, 0.0, 0.0);
 
     // Set the abs orientation, position and velocity
     auto drum = chrono_types::make_shared<ChBodyAuxRef>();
-    ChQuaternion<> wheel_Rot = Q_from_Euler123(ChVector<double>(0, 0, 0));
+    ChQuaternion wheel_Rot = QUNIT;
 
     // Set the COG coordinates to barycenter, without displacing the REF reference.
     // Make the COG frame a principal frame.
-    drum->SetFrame_COG_to_REF(ChFrame<>(mcog, principal_inertia_rot));
+    drum->SetFrameCOMToRef(ChFrame<>(mcog, principal_inertia_rot));
 
     // Set inertia
     drum->SetMass(total_mass * 1.0 / 2.0);
-    drum->SetInertiaXX(ChVector<double>(0.0058, 0.02, 0.0058));
+    drum->SetInertiaXX(ChVector3d(0.0058, 0.02, 0.0058));
     std::cout << "principal inertia: " << std::endl;
     std::cout << mdensity * principal_I << std::endl;
-    drum->SetPos_dt(wheel_IniVel);
-    drum->SetWvel_loc(ChVector<>(0.0, 0.0, 0.0));  // set an initial anular velocity (rad/s)
+    drum->SetPosDt(wheel_IniVel);
+    drum->SetAngVelLocal(ChVector3d(0.0, 0.0, 0.0));  // set an initial anular velocity (rad/s)
 
     // Set the absolute position of the body:
-    drum->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(wheel_IniPos), ChQuaternion<>(wheel_Rot)));
+    drum->SetFrameRefToAbs(ChFrame<>(ChVector3d(wheel_IniPos), ChQuaternion<>(wheel_Rot)));
     sysMBS.AddBody(drum);
 
-    drum->SetBodyFixed(false);
-    drum->SetCollide(false);
+    drum->SetFixed(false);
+    drum->EnableCollision(false);
 
      // BCE drum vector to store the drum BCE
-     std::vector<ChVector<>> BCE_drum;
+     std::vector<ChVector3d> BCE_drum;
 
      // read the drum BCE from csv file, add points to the BCE_drum vector     
      std::ifstream file(GetChronoDataFile(drum_BCE_csvfile));
@@ -186,7 +184,7 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
          {
 			 values.push_back(std::stod(val));
 		 }
-         BCE_drum.push_back(ChVector<>(values[0], values[1], values[2]));
+         BCE_drum.push_back(ChVector3d(values[0], values[1], values[2]));
 	 }
      // Now add BCE particles to the ChBody drum
      sysFSI.AddPointsBCE(drum, BCE_drum, ChFrame<>(), true);
@@ -199,8 +197,8 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     auto chassis = chrono_types::make_shared<ChBody>();
     chassis->SetMass(total_mass/2.0f);
     chassis->SetPos(drum->GetPos());
-    chassis->SetCollide(false);
-    chassis->SetBodyFixed(false);
+    chassis->EnableCollision(false);
+    chassis->SetFixed(false);
 
     // Add geometry of the chassis.
     sysMBS.AddBody(chassis);
@@ -209,23 +207,23 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     auto axle = chrono_types::make_shared<ChBody>();
     axle->SetMass(total_mass * 1.0 / 2.0);
     axle->SetPos(drum->GetPos());
-    axle->SetCollide(false);
-    axle->SetBodyFixed(false);
+    axle->EnableCollision(false);
+    axle->SetFixed(false);
 
     // Add geometry of the axle.
     sysMBS.AddBody(axle);
 
     // Connect the chassis to the containing bin (ground) through a translational joint and create a linear actuator.
     auto prismatic1 = chrono_types::make_shared<ChLinkLockPrismatic>();
-    prismatic1->Initialize(ground, chassis, ChCoordsys<>(chassis->GetPos(), Q_from_AngY(CH_C_PI_2)));
+    prismatic1->Initialize(ground, chassis, ChFrame<>(chassis->GetPos(), QuatFromAngleZ(CH_PI_2)));
     prismatic1->SetName("prismatic_chassis_ground");
     sysMBS.AddLink(prismatic1);
 
     double velocity = wheel_vel;  // wheel_AngVel * wheel_radius * (1.0 - wheel_slip);
-    auto actuator_fun = chrono_types::make_shared<ChFunction_Ramp>(0.0, velocity);
+    auto actuator_fun = chrono_types::make_shared<ChFunctionRamp>(0.0, velocity);
 
-    actuator->Initialize(ground, chassis, false, ChCoordsys<>(chassis->GetPos(), QUNIT),
-                         ChCoordsys<>(chassis->GetPos() + ChVector<>(1, 0, 0), QUNIT));
+    actuator->Initialize(ground, chassis, false, ChFrame<>(chassis->GetPos(), QUNIT),
+                         ChFrame<>(chassis->GetPos() + ChVector3d(1, 0, 0), QUNIT));
     actuator->SetName("actuator");
     actuator->SetDistanceOffset(1);
     actuator->SetActuatorFunction(actuator_fun);
@@ -235,15 +233,15 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 
     // Connect the axle to the chassis through a vertical translational joint.
     auto prismatic2 = chrono_types::make_shared<ChLinkLockPrismatic>();
-    prismatic2->Initialize(chassis, axle, ChCoordsys<>(chassis->GetPos(), QUNIT));
+    prismatic2->Initialize(chassis, axle, ChFrame<>(chassis->GetPos(), QUNIT));
     prismatic2->SetName("prismatic_axle_chassis");
     sysMBS.AddLink(prismatic2);
 
     // Connect the wheel to the axle through a engine joint.
     motor->SetName("engine_wheel_axle");
     motor->Initialize(drum, axle, ChFrame<>(drum->GetPos(),
-        chrono::Q_from_AngAxis(-CH_C_PI / 2.0, ChVector<>(1, 0, 0))));
-    motor->SetAngleFunction(chrono_types::make_shared<ChFunction_Ramp>(0, wheel_AngVel));
+        QuatFromAngleAxis(-CH_PI / 2.0, ChVector3d(1, 0, 0))));
+    motor->SetAngleFunction(chrono_types::make_shared<ChFunctionRamp>(0, wheel_AngVel));
     sysMBS.AddLink(motor);
 }
 
@@ -304,10 +302,10 @@ int main(int argc, char* argv[]) {
     // Set the artificial viscosity coefficient
     sysFSI.SetArtificialViscosity(artificial_viscosity, 0);
 
-    double gravity_G = sysFSI.Get_G_acc().z();
-    ChVector<> gravity = ChVector<>(gravity_G * sin(slope_angle), 0, gravity_G * cos(slope_angle));
-    sysMBS.Set_G_acc(gravity);
-    sysFSI.Set_G_acc(gravity);
+    double gravity_G = sysFSI.GetGravitationalAcceleration().z();
+    ChVector3d gravity = ChVector3d(gravity_G * sin(slope_angle), 0, gravity_G * cos(slope_angle));
+    sysMBS.SetGravitationalAcceleration(gravity);
+    sysFSI.SetGravitationalAcceleration(gravity);
 
     // Get the simulation stepsize
     dT = sysFSI.GetStepSize();
@@ -319,7 +317,7 @@ int main(int argc, char* argv[]) {
     kernelLength = sysFSI.GetKernelLength();
 
     // Set the terrain container size
-    sysFSI.SetContainerDim(ChVector<>(bxDim, byDim, bzDim));
+    sysFSI.SetContainerDim(ChVector3d(bxDim, byDim, bzDim));
 
     // Set SPH discretization type, consistent or inconsistent
     sysFSI.SetDiscreType(false, false);
@@ -337,13 +335,13 @@ int main(int argc, char* argv[]) {
     sysFSI.SetSPHMethod(FluidDynamics::WCSPH);
 
     // Set up the periodic boundary condition (if not, set relative larger values)
-    ChVector<> cMin(-bxDim / 2 * 10, -byDim / 2 - 0.5 * iniSpacing, -bzDim * 10);
-    ChVector<> cMax( bxDim / 2 * 10,  byDim / 2 + 0.5 * iniSpacing,  bzDim * 10);
+    ChVector3d cMin(-bxDim / 2 * 10, -byDim / 2 - 0.5 * iniSpacing, -bzDim * 10);
+    ChVector3d cMax( bxDim / 2 * 10,  byDim / 2 + 0.5 * iniSpacing,  bzDim * 10);
     sysFSI.SetBoundaries(cMin, cMax);
 
     // Initialize the SPH particles
-    ChVector<> boxCenter(0.0, 0.0, 0.0);
-    ChVector<> boxHalfDim(bxDim / 2, byDim / 2, bzDim / 2);
+    ChVector3d boxCenter(0.0, 0.0, 0.0);
+    ChVector3d boxHalfDim(bxDim / 2, byDim / 2, bzDim / 2);
     sysFSI.AddBoxSPH(boxCenter, boxHalfDim);
 
     // Create Solid region and attach BCE SPH particles
@@ -355,14 +353,18 @@ int main(int argc, char* argv[]) {
     // Construction of the FSI system must be finalized before running
     sysFSI.Initialize();
 
-    auto wheel = sysMBS.Get_bodylist()[1];
-    ChVector<> force = actuator->Get_react_force();
-    ChVector<> torque = motor->Get_react_torque();
-    ChVector<> w_pos = wheel->GetPos();
-    ChVector<> w_vel = wheel->GetPos_dt();
-    ChVector<> angvel = wheel->GetWvel_loc();
+    auto wheel = sysMBS.GetBodies()[1];
 
-    ChVector<> w_pos_init = wheel->GetPos();
+
+    auto& reaction = actuator->GetReaction2();
+    ChVector3d force = reaction.force;
+    ChVector3d torque = reaction.torque;
+    ChVector3d w_pos = wheel->GetPos();
+    ChVector3d w_vel = wheel->GetPosDt();
+    ChVector3d angvel = wheel->GetAngVelLocal();
+
+
+    ChVector3d w_pos_init = wheel->GetPos();
 
     // Save wheel mesh
     //ChTriangleMeshConnected wheel_mesh;
@@ -409,11 +411,15 @@ int main(int argc, char* argv[]) {
 
     while (time < total_time) {
         // Get the infomation of the wheel
-        force = actuator->Get_react_force();
-        torque = motor->Get_react_torque();
+
+        reaction = actuator->GetReaction2();
+        force = reaction.force;
+        torque = reaction.torque;
         w_pos = wheel->GetPos();
-        w_vel = wheel->GetPos_dt();
-        angvel = wheel->GetWvel_loc();
+        w_vel = wheel->GetPosDt();
+        angvel = wheel->GetAngVelLocal();
+
+
 
         if (time < 0.1)
         {

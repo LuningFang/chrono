@@ -27,12 +27,11 @@
 #include "chrono/assets/ChVisualShapeTriangleMesh.h"
 #include "chrono/geometry/ChTriangleMeshConnected.h"
 
-#include "chrono/motion_functions/ChFunction_Setpoint.h"
+#include "chrono/functions/ChFunctionSetpoint.h"
 
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
 #include "chrono/physics/ChLinkMotorRotationTorque.h"
-#include "chrono/physics/ChShaftsBody.h"
 
 #include "chrono/physics/ChInertiaUtils.h"
 
@@ -44,7 +43,7 @@ namespace rassor {
 // =============================================================================
 
 // Default contact material for rover parts
-std::shared_ptr<ChMaterialSurface> DefaultContactMaterial(ChContactMethod contact_method) {
+std::shared_ptr<ChContactMaterial> DefaultContactMaterial(ChContactMethod contact_method) {
     float mu = 0.4f;   // coefficient of friction
     float cr = 0.0f;   // coefficient of restitution
     float Y = 2e7f;    // Young's modulus
@@ -56,13 +55,13 @@ std::shared_ptr<ChMaterialSurface> DefaultContactMaterial(ChContactMethod contac
 
     switch (contact_method) {
         case ChContactMethod::NSC: {
-            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            auto matNSC = chrono_types::make_shared<ChContactMaterialNSC>();
             matNSC->SetFriction(mu);
             matNSC->SetRestitution(cr);
             return matNSC;
         }
         case ChContactMethod::SMC: {
-            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            auto matSMC = chrono_types::make_shared<ChContactMaterialSMC>();
             matSMC->SetFriction(mu);
             matSMC->SetRestitution(cr);
             matSMC->SetYoungModulus(Y);
@@ -74,7 +73,7 @@ std::shared_ptr<ChMaterialSurface> DefaultContactMaterial(ChContactMethod contac
             return matSMC;
         }
         default:
-            return std::shared_ptr<ChMaterialSurface>();
+            return std::shared_ptr<ChContactMaterial>();
     }
 }
 
@@ -84,10 +83,10 @@ std::shared_ptr<ChMaterialSurface> DefaultContactMaterial(ChContactMethod contac
 std::shared_ptr<ChLinkMotorRotationSpeed> AddMotorSpeed(std::shared_ptr<ChBody> body1,
                                                         std::shared_ptr<ChBody> body2,
                                                         std::shared_ptr<RassorChassis> chassis,
-                                                        const ChVector<>& rel_pos,
+                                                        const ChVector3d& rel_pos,
                                                         const ChQuaternion<>& rel_rot) {
     // Express relative frame in global
-    ChFrame<> X_GC = chassis->GetBody()->GetFrame_REF_to_abs() * ChFrame<>(rel_pos, rel_rot);
+    ChFrame<> X_GC = chassis->GetBody()->GetFrameRefToAbs() * ChFrame<>(rel_pos, rel_rot);
 
     // Create motor (actuated DOF about Z axis of X_GC frame)
     auto motor = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
@@ -102,10 +101,10 @@ std::shared_ptr<ChLinkMotorRotationSpeed> AddMotorSpeed(std::shared_ptr<ChBody> 
 std::shared_ptr<ChLinkMotorRotationAngle> AddMotorAngle(std::shared_ptr<ChBody> body1,
                                                         std::shared_ptr<ChBody> body2,
                                                         std::shared_ptr<RassorChassis> chassis,
-                                                        const ChVector<>& rel_pos,
+                                                        const ChVector3d& rel_pos,
                                                         const ChQuaternion<>& rel_rot) {
     // Express relative frame in global
-    ChFrame<> X_GC = chassis->GetBody()->GetFrame_REF_to_abs() * ChFrame<>(rel_pos, rel_rot);
+    ChFrame<> X_GC = chassis->GetBody()->GetFrameRefToAbs() * ChFrame<>(rel_pos, rel_rot);
 
     // Create motor (actuated DOF about Z axis of X_GC frame)
     auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
@@ -120,10 +119,10 @@ std::shared_ptr<ChLinkMotorRotationAngle> AddMotorAngle(std::shared_ptr<ChBody> 
 std::shared_ptr<ChLinkMotorRotationTorque> AddMotorTorque(std::shared_ptr<ChBody> body1,
                                                           std::shared_ptr<ChBody> body2,
                                                           std::shared_ptr<RassorChassis> chassis,
-                                                          const ChVector<>& rel_pos,
+                                                          const ChVector3d& rel_pos,
                                                           const ChQuaternion<>& rel_rot) {
     // Express relative frame in global
-    ChFrame<> X_GC = chassis->GetBody()->GetFrame_REF_to_abs() * ChFrame<>(rel_pos, rel_rot);
+    ChFrame<> X_GC = chassis->GetBody()->GetFrameRefToAbs() * ChFrame<>(rel_pos, rel_rot);
 
     // Create motor (actuated DOF about Z axis of X_GC frame)
     auto motor = chrono_types::make_shared<ChLinkMotorRotationTorque>();
@@ -138,22 +137,22 @@ std::shared_ptr<ChLinkMotorRotationTorque> AddMotorTorque(std::shared_ptr<ChBody
 // Base class for all Rassor Part
 RassorPart::RassorPart(const std::string& name,
                        const ChFrame<>& rel_pos,
-                       std::shared_ptr<ChMaterialSurface> mat,
+                       std::shared_ptr<ChContactMaterial> mat,
                        bool collide)
     : m_name(name), m_pos(rel_pos), m_mat(mat), m_collide(collide), m_visualize(true) {}
 
 void RassorPart::Construct(ChSystem* system) {
     m_body = chrono_types::make_shared<ChBodyAuxRef>();
-    m_body->SetNameString(m_name + "_body");
+    m_body->SetName(m_name + "_body");
     m_body->SetMass(m_mass);
     m_body->SetInertiaXX(m_inertia);
-    m_body->SetFrame_COG_to_REF(m_cog);
+    m_body->SetFrameCOMToRef(m_cog);
 
     // Add visualization shape
     if (m_visualize) {
         auto vis_mesh_file = GetChronoDataFile("robot/rassor/obj/" + m_mesh_name + ".obj");
-        auto trimesh_vis = geometry::ChTriangleMeshConnected::CreateFromWavefrontFile(vis_mesh_file, true, true);
-        trimesh_vis->Transform(m_mesh_xform.GetPos(), m_mesh_xform.GetA());  // translate/rotate/scale mesh
+        auto trimesh_vis = ChTriangleMeshConnected::CreateFromWavefrontFile(vis_mesh_file, true, true);
+        trimesh_vis->Transform(m_mesh_xform.GetPos(), m_mesh_xform.GetRotMat());  // translate/rotate/scale mesh
         trimesh_vis->RepairDuplicateVertexes(1e-9);                          // if meshes are not watertight
 
         auto trimesh_shape = chrono_types::make_shared<ChVisualShapeTriangleMesh>();
@@ -166,25 +165,25 @@ void RassorPart::Construct(ChSystem* system) {
 
     // Add collision shape
     auto col_mesh_file = GetChronoDataFile("robot/rassor/obj/" + m_mesh_name + ".obj");
-    auto trimesh_col = geometry::ChTriangleMeshConnected::CreateFromWavefrontFile(col_mesh_file, false, false);
-    trimesh_col->Transform(m_mesh_xform.GetPos(), m_mesh_xform.GetA());  // translate/rotate/scale mesh
+    auto trimesh_col = ChTriangleMeshConnected::CreateFromWavefrontFile(col_mesh_file, false, false);
+    trimesh_col->Transform(m_mesh_xform.GetPos(), m_mesh_xform.GetRotMat());  // translate/rotate/scale mesh
     trimesh_col->RepairDuplicateVertexes(1e-9);                          // if meshes are not watertight
 
     auto shape = chrono_types::make_shared<ChCollisionShapeTriangleMesh>(m_mat, trimesh_col, false, false, 0.005);
     m_body->AddCollisionShape(shape);
-    m_body->SetCollide(m_collide);
+    m_body->EnableCollision(m_collide);
 
     system->AddBody(m_body);
 }
 
 void RassorPart::CalcMassProperties(double density) {
     auto mesh_filename = GetChronoDataFile("robot/rassor/obj/" + m_mesh_name + ".obj");
-    auto trimesh_col = geometry::ChTriangleMeshConnected::CreateFromWavefrontFile(mesh_filename, true, false);
-    trimesh_col->Transform(m_mesh_xform.GetPos(), m_mesh_xform.GetA());  // translate/rotate/scale mesh
+    auto trimesh_col = ChTriangleMeshConnected::CreateFromWavefrontFile(mesh_filename, true, false);
+    trimesh_col->Transform(m_mesh_xform.GetPos(), m_mesh_xform.GetRotMat());  // translate/rotate/scale mesh
     trimesh_col->RepairDuplicateVertexes(1e-9);                          // if meshes are not watertight
 
     double vol;
-    ChVector<> cog_pos;
+    ChVector3d cog_pos;
     ChMatrix33<> cog_rot;
     ChMatrix33<> inertia;
     trimesh_col->ComputeMassProperties(true, vol, cog_pos, inertia);
@@ -198,14 +197,14 @@ void RassorPart::Initialize(std::shared_ptr<ChBodyAuxRef> chassis) {
     Construct(chassis->GetSystem());
 
     // Set absolute position
-    ChFrame<> X_GC = chassis->GetFrame_REF_to_abs() * m_pos;
-    m_body->SetFrame_REF_to_abs(X_GC);
+    ChFrame<> X_GC = chassis->GetFrameRefToAbs() * m_pos;
+    m_body->SetFrameRefToAbs(X_GC);
 }
 
 // =============================================================================
 
 // Rover Chassis
-RassorChassis::RassorChassis(const std::string& name, std::shared_ptr<ChMaterialSurface> mat)
+RassorChassis::RassorChassis(const std::string& name, std::shared_ptr<ChContactMaterial> mat)
     : RassorPart(name, ChFrame<>(VNULL, QUNIT), mat, false) {
     m_mesh_name = "rassor_chassis";
     m_color = ChColor(0.7f, 0.4f, 0.4f);
@@ -215,7 +214,7 @@ RassorChassis::RassorChassis(const std::string& name, std::shared_ptr<ChMaterial
 void RassorChassis::Initialize(ChSystem* system, const ChFrame<>& pos) {
     Construct(system);
 
-    m_body->SetFrame_REF_to_abs(pos);
+    m_body->SetFrameRefToAbs(pos);
 }
 
 // =============================================================================
@@ -223,7 +222,7 @@ void RassorChassis::Initialize(ChSystem* system, const ChFrame<>& pos) {
 // Rassor Wheel
 RassorWheel::RassorWheel(const std::string& name,
                          const ChFrame<>& rel_pos,
-                         std::shared_ptr<ChMaterialSurface> mat,
+                         std::shared_ptr<ChContactMaterial> mat,
                          RassorWheelType wheel_type)
     : RassorPart(name, rel_pos, mat, true) {
     switch (wheel_type) {
@@ -240,7 +239,7 @@ RassorWheel::RassorWheel(const std::string& name,
 // =============================================================================
 
 // Rassor Drum
-RassorDrum::RassorDrum(const std::string& name, const ChFrame<>& rel_pos, std::shared_ptr<ChMaterialSurface> mat)
+RassorDrum::RassorDrum(const std::string& name, const ChFrame<>& rel_pos, std::shared_ptr<ChContactMaterial> mat)
     : RassorPart(name, rel_pos, mat, true) {
     m_mesh_name = "rassor_razor";
     m_color = ChColor(0.1f, 0.6f, 0.8f);
@@ -249,7 +248,7 @@ RassorDrum::RassorDrum(const std::string& name, const ChFrame<>& rel_pos, std::s
 // =============================================================================
 
 // Rassor Razor
-RassorArm::RassorArm(const std::string& name, const ChFrame<>& rel_pos, std::shared_ptr<ChMaterialSurface> mat)
+RassorArm::RassorArm(const std::string& name, const ChFrame<>& rel_pos, std::shared_ptr<ChContactMaterial> mat)
     : RassorPart(name, rel_pos, mat, false) {
     m_mesh_name = "rassor_arm";
     m_color = ChColor(0.6f, 0.6f, 0.5f);
@@ -279,17 +278,17 @@ void Rassor::Create(RassorWheelType wheel_type) {
     double wy = 0.24394;
     double wz = -0.00136;
 
-    m_wheels[RA_LF] = chrono_types::make_shared<RassorWheel>("Wheel_LF", ChFrame<>(ChVector<>(+wx, +wy, wz), QUNIT),
+    m_wheels[RA_LF] = chrono_types::make_shared<RassorWheel>("Wheel_LF", ChFrame<>(ChVector3d(+wx, +wy, wz), QUNIT),
                                                              m_wheel_material, wheel_type);
-    m_wheels[RA_RF] = chrono_types::make_shared<RassorWheel>("Wheel_RF", ChFrame<>(ChVector<>(+wx, -wy, wz), QUNIT),
+    m_wheels[RA_RF] = chrono_types::make_shared<RassorWheel>("Wheel_RF", ChFrame<>(ChVector3d(+wx, -wy, wz), QUNIT),
                                                              m_wheel_material, wheel_type);
-    m_wheels[RA_LB] = chrono_types::make_shared<RassorWheel>("Wheel_LB", ChFrame<>(ChVector<>(-wx, +wy, wz), QUNIT),
+    m_wheels[RA_LB] = chrono_types::make_shared<RassorWheel>("Wheel_LB", ChFrame<>(ChVector3d(-wx, +wy, wz), QUNIT),
                                                              m_wheel_material, wheel_type);
-    m_wheels[RA_RB] = chrono_types::make_shared<RassorWheel>("Wheel_RB", ChFrame<>(ChVector<>(-wx, -wy, wz), QUNIT),
+    m_wheels[RA_RB] = chrono_types::make_shared<RassorWheel>("Wheel_RB", ChFrame<>(ChVector3d(-wx, -wy, wz), QUNIT),
                                                              m_wheel_material, wheel_type);
 
-    m_wheels[RA_RF]->m_mesh_xform = ChFrame<>(VNULL, Q_from_AngZ(CH_C_PI));
-    m_wheels[RA_RB]->m_mesh_xform = ChFrame<>(VNULL, Q_from_AngZ(CH_C_PI));
+    m_wheels[RA_RF]->m_mesh_xform = ChFrame<>(VNULL, QuatFromAngleZ(CH_PI));
+    m_wheels[RA_RB]->m_mesh_xform = ChFrame<>(VNULL, QuatFromAngleZ(CH_PI));
 
     // initialize rover razors
     double rx = 0.71883;
@@ -297,13 +296,14 @@ void Rassor::Create(RassorWheelType wheel_type) {
     double rz = -0.00136;
 
     ChQuaternion<> z2z180;
-    z2z180.Q_from_AngAxis(CH_C_PI, ChVector<>(0, 0, 1));
+    z2z180.SetFromAngleAxis(CH_PI, ChVector3d(0, 0, 1));
+    
 
     m_razors[0] =
-        chrono_types::make_shared<RassorDrum>("razor_F", ChFrame<>(ChVector<>(+rx, ry, rz), QUNIT), m_wheel_material);
+        chrono_types::make_shared<RassorDrum>("razor_F", ChFrame<>(ChVector3d(+rx, ry, rz), QUNIT), m_wheel_material);
 
     m_razors[1] =
-        chrono_types::make_shared<RassorDrum>("razor_B", ChFrame<>(ChVector<>(-rx, ry, rz), QUNIT), m_wheel_material);
+        chrono_types::make_shared<RassorDrum>("razor_B", ChFrame<>(ChVector3d(-rx, ry, rz), QUNIT), m_wheel_material);
 
     m_razors[0]->m_mesh_name = "drum_cw";
     m_razors[1]->m_mesh_name = "drum_ccw";
@@ -315,19 +315,19 @@ void Rassor::Create(RassorWheelType wheel_type) {
     double ay = 0.0;
     double az = 0.0;
     ChQuaternion<> y2y180;
-    y2y180.Q_from_AngAxis(CH_C_PI, ChVector<>(0, 1, 0));
+    y2y180.SetFromAngleAxis(CH_PI, ChVector3d(0, 1, 0));
     m_arms[0] =
-        chrono_types::make_shared<RassorArm>("arm_F", ChFrame<>(ChVector<>(+ax, ay, az), QUNIT), m_wheel_material);
+        chrono_types::make_shared<RassorArm>("arm_F", ChFrame<>(ChVector3d(+ax, ay, az), QUNIT), m_wheel_material);
 
     m_arms[1] =
-        chrono_types::make_shared<RassorArm>("arm_B", ChFrame<>(ChVector<>(-ax, ay, az), y2y180), m_wheel_material);
+        chrono_types::make_shared<RassorArm>("arm_B", ChFrame<>(ChVector3d(-ax, ay, az), y2y180), m_wheel_material);
 }
 
 void Rassor::Initialize(const ChFrame<>& pos) {
     assert(m_driver);
 
     m_chassis->Initialize(m_system, pos);
-    m_chassis->GetBody()->SetBodyFixed(m_chassis_fixed);
+    m_chassis->GetBody()->SetFixed(m_chassis_fixed);
 
     for (int i = 0; i < 4; i++) {
         m_wheels[i]->Initialize(m_chassis->GetBody());
@@ -343,13 +343,13 @@ void Rassor::Initialize(const ChFrame<>& pos) {
     double wy = 0.24394;
     double wz = -0.00136;
 
-    std::vector<ChVector<>> drive_motor_rel_pos = {ChVector<>(+wx, +wy, wz), ChVector<>(+wx, -wy, wz),
-                                                   ChVector<>(-wx, +wy, wz), ChVector<>(-wx, -wy, wz)};
+    std::vector<ChVector3d> drive_motor_rel_pos = {ChVector3d(+wx, +wy, wz), ChVector3d(+wx, -wy, wz),
+                                                   ChVector3d(-wx, +wy, wz), ChVector3d(-wx, -wy, wz)};
 
     ChQuaternion<> z2y;
-    z2y.Q_from_AngAxis(CH_C_PI / 2, ChVector<>(1, 0, 0));
+    z2y.SetFromAngleAxis(CH_PI / 2, ChVector3d(1, 0, 0));
     for (int i = 0; i < 4; i++) {
-        m_drive_motor_funcs[i] = chrono_types::make_shared<ChFunction_Const>(0.5);
+        m_drive_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.5);
         m_drive_motors[i] =
             AddMotorSpeed(m_chassis->GetBody(), m_wheels[i]->GetBody(), m_chassis, drive_motor_rel_pos[i], z2y);
         m_drive_motors[i]->SetMotorFunction(m_drive_motor_funcs[i]);
@@ -359,12 +359,12 @@ void Rassor::Initialize(const ChFrame<>& pos) {
     double ax = 0.25;
     double ay = 0.0;
     double az = 0.0;
-    std::vector<ChVector<>> arm_motor_rel_pos = {ChVector<>(+ax, ay, az), ChVector<>(-ax, ay, az)};
+    std::vector<ChVector3d> arm_motor_rel_pos = {ChVector3d(+ax, ay, az), ChVector3d(-ax, ay, az)};
     for (int i = 0; i < 2; i++) {
         if (i == 0)
-            m_arm_1_motor_funcs[i] = chrono_types::make_shared<ChFunction_Const>(-0.25);
+            m_arm_1_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(-0.25);
         if (i == 1)
-            m_arm_1_motor_funcs[i] = chrono_types::make_shared<ChFunction_Const>(0.25);
+            m_arm_1_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.25);
         m_arm_1_motors[i] =
             AddMotorSpeed(m_chassis->GetBody(), m_arms[i]->GetBody(), m_chassis, arm_motor_rel_pos[i], z2y);
         m_arm_1_motors[i]->SetMotorFunction(m_arm_1_motor_funcs[i]);
@@ -374,10 +374,10 @@ void Rassor::Initialize(const ChFrame<>& pos) {
     double rx = 0.71883;
     double ry = 0.0;
     double rz = -0.00136;
-    std::vector<ChVector<>> arm_motor_rel_pos_2 = {ChVector<>(+rx, ry, rz), ChVector<>(-rx, ry, rz)};
+    std::vector<ChVector3d> arm_motor_rel_pos_2 = {ChVector3d(+rx, ry, rz), ChVector3d(-rx, ry, rz)};
 
     for (int i = 0; i < 2; i++) {
-        m_arm_2_motor_funcs[i] = chrono_types::make_shared<ChFunction_Const>(0.25);
+        m_arm_2_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.25);
         m_arm_2_motors[i] =
             AddMotorSpeed(m_arms[i]->GetBody(), m_razors[i]->GetBody(), m_chassis, arm_motor_rel_pos_2[i], z2y);
         m_arm_2_motors[i]->SetMotorFunction(m_arm_2_motor_funcs[i]);
@@ -389,7 +389,7 @@ void Rassor::SetDriver(std::shared_ptr<RassorDriver> driver) {
     m_driver->rassor = this;
 }
 
-void Rassor::SetWheelContactMaterial(std::shared_ptr<ChMaterialSurface> mat) {
+void Rassor::SetWheelContactMaterial(std::shared_ptr<ChContactMaterial> mat) {
     for (auto& wheel : m_wheels)
         wheel->m_mat = mat;
 }
@@ -398,19 +398,19 @@ void Rassor::SetChassisFixed(bool fixed) {
     m_chassis_fixed = fixed;
 }
 
-ChVector<> Rassor::GetWheelContactForce(RassorWheelID id) const {
+ChVector3d Rassor::GetWheelContactForce(RassorWheelID id) const {
     return m_wheels[id]->GetBody()->GetContactForce();
 }
 
-ChVector<> Rassor::GetWheelContactTorque(RassorWheelID id) const {
+ChVector3d Rassor::GetWheelContactTorque(RassorWheelID id) const {
     return m_wheels[id]->GetBody()->GetContactTorque();
 }
 
-ChVector<> Rassor::GetWheelAppliedForce(RassorWheelID id) const {
+ChVector3d Rassor::GetWheelAppliedForce(RassorWheelID id) const {
     return m_wheels[id]->GetBody()->GetAppliedForce();
 }
 
-ChVector<> Rassor::GetWheelAppliedTorque(RassorWheelID id) const {
+ChVector3d Rassor::GetWheelAppliedTorque(RassorWheelID id) const {
     return m_wheels[id]->GetBody()->GetAppliedTorque();
 }
 
@@ -448,14 +448,14 @@ void Rassor::Update() {
         double driving = m_driver->drive_speeds[i];
 
         // Set motor functions
-        m_drive_motor_funcs[i]->Set_yconst(driving);
+        m_drive_motor_funcs[i]->SetConstant(driving);
     }
 
     for (int i = 0; i < 2; i++) {
         double arm_speed = m_driver->arm_speeds[i];
         double razor_speed = m_driver->razor_speeds[i];
-        m_arm_1_motor_funcs[i]->Set_yconst(arm_speed);
-        m_arm_2_motor_funcs[i]->Set_yconst(razor_speed);
+        m_arm_1_motor_funcs[i]->SetConstant(arm_speed);
+        m_arm_2_motor_funcs[i]->SetConstant(razor_speed);
     }
 }
 
@@ -478,21 +478,21 @@ void Rassor::writeMeshFile(const std::string& out_dir, int frame_number,  bool s
         auto part = body_mesh_list[i];
         // get body position and orientation
         auto body = part->GetBody();
-        ChFrame<> body_ref_frame = body->GetFrame_REF_to_abs();
-        ChVector<> body_pos = body_ref_frame.GetPos();
+        ChFrame<> body_ref_frame = body->GetFrameRefToAbs();
+        ChVector3d body_pos = body_ref_frame.GetPos();
         ChQuaternion<> body_rot = body_ref_frame.GetRot();
 
-        auto trimesh = geometry::ChTriangleMeshConnected::CreateFromWavefrontFile(part->GetMeshName(), false, false);
+        auto trimesh = ChTriangleMeshConnected::CreateFromWavefrontFile(part->GetMeshName(), false, false);
 
         // Transform mesh itself
         trimesh->Transform(m_chassis->GetMeshTransform().GetPos(),
-                           m_chassis->GetMeshTransform().GetA());  // translate/rotate/scale mesh
+                           m_chassis->GetMeshTransform().GetRotMat());  // translate/rotate/scale mesh
 
         // Transform mesh based on body position and pose
         trimesh->Transform(body_pos, ChMatrix33<>(body_rot));  // rotate the mesh based on the orientation of body
 
         std::string filename = out_dir + "/" + part->GetName() + "_" + std::to_string(frame_number) + ".obj";
-        geometry::ChTriangleMeshConnected::WriteWavefront(filename, {*trimesh});
+        ChTriangleMeshConnected::WriteWavefront(filename, {*trimesh});
     }
 }
 

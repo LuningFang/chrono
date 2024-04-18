@@ -65,7 +65,7 @@ class CH_MODELS_API RassorPart {
   public:
     RassorPart(const std::string& name,                 ///< part name
                const ChFrame<>& rel_pos,                ///< position relative to chassis frame
-               std::shared_ptr<ChMaterialSurface> mat,  ///< contact material
+               std::shared_ptr<ChContactMaterial> mat,  ///< contact material
                bool collide                             ///< enable collision?
     );
     virtual ~RassorPart() {}
@@ -90,27 +90,27 @@ class CH_MODELS_API RassorPart {
 
     /// Return the position of the Rassor part.
     /// This is the absolute location of the part reference frame.
-    const ChVector<>& GetPos() const { return m_body->GetFrame_REF_to_abs().GetPos(); }
+    const ChVector3d& GetPos() const { return m_body->GetFrameRefToAbs().GetPos(); }
 
     /// Return the rotation of the Rassor part.
     /// This is the orientation wrt the global frame of the part reference frame.
-    const ChQuaternion<>& GetRot() const { return m_body->GetFrame_REF_to_abs().GetRot(); }
+    const ChQuaternion<>& GetRot() const { return m_body->GetFrameRefToAbs().GetRot(); }
 
     /// Return the linear velocity of the Rassor part.
     /// This is the absolute linear velocity of the part reference frame.
-    const ChVector<>& GetLinVel() const { return m_body->GetFrame_REF_to_abs().GetPos_dt(); }
+    const ChVector3d& GetLinVel() const { return m_body->GetFrameRefToAbs().GetPosDt(); }
 
     /// Return the angular velocity of the Rassor part.
     /// This is the absolute angular velocity of the part reference frame.
-    const ChVector<> GetAngVel() const { return m_body->GetFrame_REF_to_abs().GetWvel_par(); }
+    const ChVector3d GetAngVel() const { return m_body->GetFrameRefToAbs().GetAngVelParent(); }
 
     /// Return the linear acceleration of the Rassor part.
     /// This is the absolute linear acceleration of the part reference frame.
-    const ChVector<>& GetLinAcc() const { return m_body->GetFrame_REF_to_abs().GetPos_dtdt(); }
+    const ChVector3d& GetLinAcc() const { return m_body->GetFrameRefToAbs().GetPosDt2(); }
 
     /// Return the angular acceleratino of the Rassor part.
     /// This is the absolute angular acceleratin of the part reference frame.
-    const ChVector<> GetAngAcc() const { return m_body->GetFrame_REF_to_abs().GetWacc_par(); }
+    const ChVector3d GetAngAcc() const { return m_body->GetFrameRefToAbs().GetAngAccParent(); }
 
 
     /// Return mesh name for visualization
@@ -128,7 +128,7 @@ class CH_MODELS_API RassorPart {
 
     std::string m_name;                        ///< part name
     std::shared_ptr<ChBodyAuxRef> m_body;      ///< part rigid body
-    std::shared_ptr<ChMaterialSurface> m_mat;  ///< contact material
+    std::shared_ptr<ChContactMaterial> m_mat;  ///< contact material
 
     std::string m_mesh_name;  ///< visualization mesh name
     ChFrame<> m_mesh_xform;   ///< mesh transform (translate, rotate, scale)
@@ -136,7 +136,7 @@ class CH_MODELS_API RassorPart {
 
     ChFrame<> m_pos;       ///< relative position wrt the chassis
     double m_mass;         ///< mass
-    ChVector<> m_inertia;  ///< principal moments of inertia
+    ChVector3d m_inertia;  ///< principal moments of inertia
     ChFrame<> m_cog;       ///< COG frame (relative to body frame)
 
     bool m_visualize;  ///< part visualization flag
@@ -147,7 +147,7 @@ class CH_MODELS_API RassorPart {
 class CH_MODELS_API RassorChassis : public RassorPart {
   public:
     RassorChassis(const std::string& name,                ///< part name
-                  std::shared_ptr<ChMaterialSurface> mat  ///< contact material
+                  std::shared_ptr<ChContactMaterial> mat  ///< contact material
     );
     ~RassorChassis() {}
 
@@ -160,7 +160,7 @@ class CH_MODELS_API RassorWheel : public RassorPart {
   public:
     RassorWheel(const std::string& name,                 ///< part name
                 const ChFrame<>& rel_pos,                ///< position relative to chassis frame
-                std::shared_ptr<ChMaterialSurface> mat,  ///< contact material
+                std::shared_ptr<ChContactMaterial> mat,  ///< contact material
                 RassorWheelType wheel_type               ///< wheel type
     );
     ~RassorWheel() {}
@@ -176,7 +176,7 @@ class CH_MODELS_API RassorDrum : public RassorPart {
   public:
     RassorDrum(const std::string& name,                ///< part name
                 const ChFrame<>& rel_pos,               ///< position relative to chassis frame
-                std::shared_ptr<ChMaterialSurface> mat  ///< contact material
+                std::shared_ptr<ChContactMaterial> mat  ///< contact material
     );
     ~RassorDrum() {}
 
@@ -188,7 +188,7 @@ class CH_MODELS_API RassorArm : public RassorPart {
   public:
     RassorArm(const std::string& name,                ///< part name
               const ChFrame<>& rel_pos,               ///< position relative to chassis frame
-              std::shared_ptr<ChMaterialSurface> mat  ///< contact material
+              std::shared_ptr<ChContactMaterial> mat  ///< contact material
     );
     ~RassorArm() {}
 
@@ -213,7 +213,7 @@ class CH_MODELS_API Rassor {
     void SetDriver(std::shared_ptr<RassorDriver> driver);
 
     /// Set wheel contact material.
-    void SetWheelContactMaterial(std::shared_ptr<ChMaterialSurface> mat);
+    void SetWheelContactMaterial(std::shared_ptr<ChContactMaterial> mat);
 
     /// Fix the chassis to ground.
     void SetChassisFixed(bool fixed);
@@ -237,49 +237,49 @@ class CH_MODELS_API Rassor {
     std::shared_ptr<RassorDrum> GetRazor(RassorDirID id) const { return m_razors[id]; }
 
     /// Get chassis position.
-    ChVector<> GetChassisPos() const { return m_chassis->GetPos(); }
+    ChVector3d GetChassisPos() const { return m_chassis->GetPos(); }
 
     /// Get chassis orientation.
     ChQuaternion<> GetChassisRot() const { return m_chassis->GetRot(); }
 
     /// Get chassis linear velocity.
-    ChVector<> GetChassisVel() const { return m_chassis->GetLinVel(); }
+    ChVector3d GetChassisVel() const { return m_chassis->GetLinVel(); }
 
     /// Get chassis linear acceleration.
-    ChVector<> GetChassisAcc() const { return m_chassis->GetLinAcc(); }
+    ChVector3d GetChassisAcc() const { return m_chassis->GetLinAcc(); }
 
     /// Get wheel speed.
-    ChVector<> GetWheelLinVel(RassorWheelID id) const { return m_wheels[id]->GetLinVel(); }
+    ChVector3d GetWheelLinVel(RassorWheelID id) const { return m_wheels[id]->GetLinVel(); }
 
     /// Get wheel angular velocity.
-    ChVector<> GetWheelAngVel(RassorWheelID id) const { return m_wheels[id]->GetAngVel(); }
+    ChVector3d GetWheelAngVel(RassorWheelID id) const { return m_wheels[id]->GetAngVel(); }
 
     /// Get wheel contact force.
-    ChVector<> GetWheelContactForce(RassorWheelID id) const;
+    ChVector3d GetWheelContactForce(RassorWheelID id) const;
 
     /// Get wheel contact torque.
-    ChVector<> GetWheelContactTorque(RassorWheelID id) const;
+    ChVector3d GetWheelContactTorque(RassorWheelID id) const;
 
     /// Get wheel total applied force.
-    ChVector<> GetWheelAppliedForce(RassorWheelID id) const;
+    ChVector3d GetWheelAppliedForce(RassorWheelID id) const;
 
     /// Get wheel tractive torque - if DC control set to off
     double GetWheelTracTorque(RassorWheelID id) const;
 
     /// Get wheel total applied torque.
-    ChVector<> GetWheelAppliedTorque(RassorWheelID id) const;
+    ChVector3d GetWheelAppliedTorque(RassorWheelID id) const;
 
-    double GetDriveMotorRot(RassorWheelID id){return m_drive_motors[id]->GetMotorRot();}
+    double GetDriveMotorRot(RassorWheelID id){return m_drive_motors[id]->GetMotorAngle();}
 
-    double GetDriveMotorRot_dt(RassorWheelID id){return m_drive_motors[id]->GetMotorRot_dt();}
+    double GetDriveMotorRot_dt(RassorWheelID id){return m_drive_motors[id]->GetMotorAngleDt();}
 
-    double GetArmMotorRot(RassorWheelID id){return m_arm_1_motors[id]->GetMotorRot();}
+    double GetArmMotorRot(RassorWheelID id){return m_arm_1_motors[id]->GetMotorAngle();}
 
-    double GetArmMotorRot_dt(RassorWheelID id){return m_arm_1_motors[id]->GetMotorRot_dt();}
+    double GetArmMotorRot_dt(RassorWheelID id){return m_arm_1_motors[id]->GetMotorAngleDt();}
 
-    double GetRazorMotorRot(RassorWheelID id){return m_arm_2_motors[id]->GetMotorRot();}
+    double GetRazorMotorRot(RassorWheelID id){return m_arm_2_motors[id]->GetMotorAngle();}
 
-    double GetRazorMotorRot_dt(RassorWheelID id){return m_arm_2_motors[id]->GetMotorRot_dt();}
+    double GetRazorMotorRot_dt(RassorWheelID id){return m_arm_2_motors[id]->GetMotorAngleDt();}
 
     /// Get total rover mass.
     double GetRoverMass() const;
@@ -289,7 +289,7 @@ class CH_MODELS_API Rassor {
 
     /// Get drive motor function.
     /// This will return an empty pointer if the associated driver uses torque control.
-    std::shared_ptr<ChFunction_Const> GetDriveMotorFunc(RassorWheelID id) const { return m_drive_motor_funcs[id]; }
+    std::shared_ptr<ChFunctionConst> GetDriveMotorFunc(RassorWheelID id) const { return m_drive_motor_funcs[id]; }
 
     /// Get drive motor.
     /// This will return an empty pointer if the associated driver uses torque control.
@@ -315,16 +315,16 @@ class CH_MODELS_API Rassor {
     std::array<std::shared_ptr<RassorArm>, 2> m_arms;      ///< rover arms (F,B)
 
     std::array<std::shared_ptr<ChLinkMotorRotation>, 4> m_drive_motors;    ///< drive motors
-    std::array<std::shared_ptr<ChFunction_Const>, 4> m_drive_motor_funcs;  ///< drive motor functions
+    std::array<std::shared_ptr<ChFunctionConst>, 4> m_drive_motor_funcs;  ///< drive motor functions
     std::array<std::shared_ptr<ChLinkMotorRotation>, 2> m_arm_1_motors;    ///< drive motors
-    std::array<std::shared_ptr<ChFunction_Const>, 2> m_arm_1_motor_funcs;  ///< drive motor functions
+    std::array<std::shared_ptr<ChFunctionConst>, 2> m_arm_1_motor_funcs;  ///< drive motor functions
     std::array<std::shared_ptr<ChLinkMotorRotation>, 2> m_arm_2_motors;    ///< drive motors
-    std::array<std::shared_ptr<ChFunction_Const>, 2> m_arm_2_motor_funcs;  ///< drive motor functions
+    std::array<std::shared_ptr<ChFunctionConst>, 2> m_arm_2_motor_funcs;  ///< drive motor functions
 
     std::shared_ptr<RassorDriver> m_driver;  ///< rover driver system
 
-    std::shared_ptr<ChMaterialSurface> m_default_material;  ///< common contact material for all non-wheel parts
-    std::shared_ptr<ChMaterialSurface> m_wheel_material;    ///< wheel contact material (shared across limbs)
+    std::shared_ptr<ChContactMaterial> m_default_material;  ///< common contact material for all non-wheel parts
+    std::shared_ptr<ChContactMaterial> m_wheel_material;    ///< wheel contact material (shared across limbs)
 };
 
 // -----------------------------------------------------------------------------
