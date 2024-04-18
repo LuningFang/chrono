@@ -25,9 +25,6 @@ set(CMAKE_CXX_STANDARD 17)
 # Find ROS
 #-----------------------------------------------------------------------------
 
-<<<<<<< HEAD
-find_package(ROS2 REQUIRED)
-=======
 find_package(ROS2 QUIET)
 if(ROS2_FOUND)
   message(STATUS "Found ROS 2.")
@@ -36,7 +33,6 @@ else()
   message(SEND_ERROR "Chrono::ROS requires ROS 2, but ROS 2 was not found.")
   return()
 endif()
->>>>>>> develop
 
 # Update the includes directories to point to ROS includes
 set(_ament_prefix_path "$ENV{AMENT_PREFIX_PATH}")
@@ -44,14 +40,6 @@ foreach(_ros2_packages_path IN LISTS _ament_prefix_path)
     string(REPLACE ":" ";" _ros2_packages_path ${_ros2_packages_path})
     list(APPEND CH_ROS_INCLUDES "${_ros2_packages_path}/include")
 endforeach()
-<<<<<<< HEAD
-set(_ros_packages rclcpp std_msgs geometry_msgs sensor_msgs chrono_ros_interfaces rcl_interfaces tf2 tf2_msgs)
-foreach(_package IN LISTS _ros_packages)
-  find_package(${_package} REQUIRED)
-  list(APPEND CH_ROS_LINKED_LIBRARIES "${${_package}_LIBRARIES}")
-  list(APPEND CH_ROS_INCLUDES "${${_package}_INCLUDE_DIRS}")
-endforeach()
-=======
 
 # Find ROS packages
 set(_required_ros_packages rclcpp rcl_interfaces std_msgs geometry_msgs sensor_msgs tf2_ros tf2_msgs)
@@ -79,7 +67,6 @@ set(CH_ROS_HAS_INTERFACES ${chrono_ros_interfaces_FOUND})
 
 list(REMOVE_DUPLICATES CH_ROS_INCLUDES)
 list(REMOVE_DUPLICATES CH_ROS_LINKED_LIBRARIES)
->>>>>>> develop
 
 # ----------------------------------------------------------------------------
 # Generate and install configuration file
@@ -115,28 +102,6 @@ set(CH_ROS_HANDLER_FILES
   handlers/ChROSClockHandler.cpp
   handlers/ChROSBodyHandler.h
   handlers/ChROSBodyHandler.cpp
-<<<<<<< HEAD
-
-  handlers/ChROSHandlerUtilities.h
-  handlers/ChROSHandlerUtilities.cpp
-
-  handlers/ChROSTFHandler.h
-  handlers/ChROSTFHandler.cpp
-
-)
-source_group("handler" FILES ${CH_ROS_HANDLER_FILES})
-
-if (ENABLE_MODULE_VEHICLE)
-  set(CH_ROS_VEHICLE_HANDLER_FILES
-    handlers/vehicle/ChROSDriverInputsHandler.h
-    handlers/vehicle/ChROSDriverInputsHandler.cpp
-  )
-else()
-  set(CH_ROS_VEHICLE_HANDLER_FILES "")
-endif()
-source_group("vehicle_handler" FILES ${CH_ROS_VEHICLE_HANDLER_FILES})
-
-=======
   handlers/ChROSTFHandler.h
   handlers/ChROSTFHandler.cpp
 
@@ -157,7 +122,6 @@ endif()
 source_group("vehicle_handler" FILES ${CH_ROS_VEHICLE_HANDLER_FILES})
 
 set(CH_ROS_SENSOR_HANDLER_FILES "")
->>>>>>> develop
 if (ENABLE_MODULE_SENSOR)
   set(CH_ROS_SENSOR_HANDLER_FILES
     handlers/sensor/ChROSCameraHandler.h
@@ -170,36 +134,18 @@ if (ENABLE_MODULE_SENSOR)
     handlers/sensor/ChROSGyroscopeHandler.cpp
     handlers/sensor/ChROSMagnetometerHandler.h
     handlers/sensor/ChROSMagnetometerHandler.cpp
-<<<<<<< HEAD
-=======
     handlers/sensor/ChROSIMUHandler.h
     handlers/sensor/ChROSIMUHandler.cpp
->>>>>>> develop
     handlers/sensor/ChROSGPSHandler.h
     handlers/sensor/ChROSGPSHandler.cpp
 
     handlers/sensor/ChROSSensorHandlerUtilities.h
     handlers/sensor/ChROSSensorHandlerUtilities.cpp
   )
-<<<<<<< HEAD
-else()
-  set(CH_ROS_SENSOR_HANDLER_FILES "")
-=======
->>>>>>> develop
 endif()
 source_group("sensor_handler" FILES ${CH_ROS_SENSOR_HANDLER_FILES})
 
 set(CH_ROS_ROBOT_HANDLER_FILES
-<<<<<<< HEAD
-  # viper
-  handlers/robot/viper/ChROSViperDCMotorControlHandler.h
-  handlers/robot/viper/ChROSViperDCMotorControlHandler.cpp
-
-  # cobra
-  handlers/robot/cobra/ChROSCobraDCMotorControlHandler.h
-  handlers/robot/cobra/ChROSCobraDCMotorControlHandler.cpp
-)
-=======
   handlers/robot/ChROSRobotModelHandler.h
   handlers/robot/ChROSRobotModelHandler.cpp
 )
@@ -209,17 +155,12 @@ if (CH_ROS_HAS_INTERFACES)
     handlers/robot/viper/ChROSViperDCMotorControlHandler.cpp
   )
 endif()
->>>>>>> develop
 source_group("robot_handler" FILES ${CH_ROS_ROBOT_HANDLER_FILES})
 
 #-----------------------------------------------------------------------------
 # Create the ChronoEngine_ros library
 #-----------------------------------------------------------------------------
 
-<<<<<<< HEAD
-list(APPEND CH_ROS_LIBRARIES ChronoModels_robot)
-
-=======
 add_library(ChronoEngine_ros SHARED
 	${CH_ROS_BASE_FILES}
 	${CH_ROS_HANDLER_FILES}
@@ -235,7 +176,6 @@ if (CH_ROS_HAS_INTERFACES)
   target_compile_definitions(ChronoEngine_ros PUBLIC -DCHRONO_ROS_HAS_INTERFACES)
 endif()
 
->>>>>>> develop
 if (ENABLE_MODULE_VEHICLE)
 	list(APPEND CH_ROS_LIBRARIES ChronoEngine_vehicle)
   if (ENABLE_MODULE_VEHICLE_MODELS)
@@ -246,39 +186,16 @@ endif()
 if (ENABLE_MODULE_SENSOR)
 	list(APPEND CH_ROS_LIBRARIES ChronoEngine_sensor)
 endif()
-<<<<<<< HEAD
-  
-if (ENABLE_MODULE_IRRLICHT)
-	list(APPEND CH_ROS_LIBRARIES ChronoEngine_irrlicht)
-  if (ENABLE_MODULE_VEHICLE)
-    list(APPEND CH_ROS_LIBRARIES ChronoEngine_vehicle_irrlicht)
-  endif()
-
-  include_directories(${CH_IRRLICHT_INCLUDES})
-  set(CXX_FLAGS "${CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
-=======
 
 if (ENABLE_MODULE_PARSERS)
 	list(APPEND CH_ROS_LIBRARIES ChronoEngine_parsers)
   target_compile_definitions(ChronoEngine_ros PUBLIC -DCHRONO_PARSERS_URDF)
->>>>>>> develop
 endif()
 
 # Set some variables to be visible outside this directory
 set(CH_ROS_INCLUDES   "${CH_ROS_INCLUDES}"   PARENT_SCOPE)
 set(CH_ROS_LIBRARIES  "${CH_ROS_LIBRARIES}"  PARENT_SCOPE)
-<<<<<<< HEAD
-
-add_library(ChronoEngine_ros SHARED
-	${CH_ROS_BASE_FILES}
-	${CH_ROS_HANDLER_FILES}
-	${CH_ROS_VEHICLE_HANDLER_FILES}
-	${CH_ROS_SENSOR_HANDLER_FILES}
-	${CH_ROS_ROBOT_HANDLER_FILES}
-)
-=======
 set(CH_ROS_HAS_INTERFACES ${CH_ROS_HAS_INTERFACES} PARENT_SCOPE)
->>>>>>> develop
 
 # windows builds should disable warning 4661 and 4005
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

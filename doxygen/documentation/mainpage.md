@@ -57,11 +57,7 @@ Instructions on **how to set up a project** that uses Chrono.
 
   Add-on for importing Chrono simulations in Blender for rigging, editing and rendering
 
-<<<<<<< HEAD
-- [Visualization](@ref manual_visualization)
-=======
 - [Chrono::ROS](@ref manual_ros)
->>>>>>> develop
 
   Integration with an external autonomy stack based on the Robot Operating System (ROS)
 

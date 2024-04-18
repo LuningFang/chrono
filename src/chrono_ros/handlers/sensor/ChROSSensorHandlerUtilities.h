@@ -22,10 +22,7 @@
 #include "chrono_sensor/sensors/ChSensor.h"
 
 #include <memory>
-<<<<<<< HEAD
-=======
 #include <array>
->>>>>>> develop
 
 namespace chrono {
 namespace ros {
@@ -33,17 +30,9 @@ namespace ros {
 /// @addtogroup ros_sensor_handlers
 /// @{
 
-<<<<<<< HEAD
-
 /// Utility class with static functions that may be useful for sensor-specific ROS handlers
 class ChROSSensorHandlerUtilities {
   public:
-    
-=======
-/// Utility class with static functions that may be useful for sensor-specific ROS handlers
-class ChROSSensorHandlerUtilities {
-  public:
->>>>>>> develop
     /// Check for filter in Sensor filter list. Returns true if present, false if not.
     /// @tparam FilterType the filter to search for
     /// @tparam FilterName name of the filter to search for
@@ -53,19 +42,12 @@ class ChROSSensorHandlerUtilities {
         auto it = std::find_if(filters.rbegin(), filters.rend(),
                                [](auto filter) { return std::dynamic_pointer_cast<FilterType>(filter) != nullptr; });
         if (it == filters.rend()) {
-<<<<<<< HEAD
-            GetLog() << "ERROR: Sensor with name '" << sensor->GetName().c_str() << "' doesn't have a " << FilterName
-                     << " filter.\n";
-=======
             std::cerr << "ERROR: Sensor with name '" << sensor->GetName().c_str() << "' doesn't have a " << FilterName
                       << " filter." << std::endl;
->>>>>>> develop
             return false;
         }
         return true;
     }
-<<<<<<< HEAD
-=======
 
     /// Calculates the covariance of the sensor data
     /// @param data the sensor data
@@ -83,7 +65,6 @@ class ChROSSensorHandlerUtilities {
         }
         return covariance;
     }
->>>>>>> develop
 };
 
 /// @} ros_sensor_handlers

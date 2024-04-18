@@ -157,25 +157,15 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 
     // Add BCE particles attached on the walls into FSI system
     sysFSI.AddBoxContainerBCE(box,                                            //
-<<<<<<< HEAD
-                              ChFrame<>(ChVector<>(0, 0, bzDim / 2), QUNIT),  //
-                              ChVector<>(bxDim, byDim, bzDim),                //
-                              ChVector<int>(2, 2, -1));
-=======
                               ChFrame<>(ChVector3d(0, 0, bzDim / 2), QUNIT),  //
                               ChVector3d(bxDim, byDim, bzDim),                //
                               ChVector3i(2, 2, 2));
->>>>>>> develop
 
     // Create a falling cylinder
     auto cylinder = chrono_types::make_shared<ChBody>();
 
     // Set the general properties of the cylinder
-<<<<<<< HEAD
-    double volume = geometry::ChCylinder::GetVolume(cyl_radius, cyl_length);
-=======
-    double volume = ChCylinder::GetVolume(cyl_radius, cyl_length / 2);
->>>>>>> develop
+    double volume = ChCylinder::GetVolume(cyl_radius, cyl_length);
     double density = sysFSI.GetDensity() * 2.0;
     double mass = density * volume;
     ChVector3d cyl_pos = ChVector3d(0, 0, bzDim + cyl_radius + 2 * initSpace0);
@@ -341,15 +331,7 @@ int main(int argc, char* argv[]) {
             sysFSI.PrintFsiInfoToFile(out_dir + "/fsi", time);
             static int counter = 0;
             std::string filename = out_dir + "/vtk/cylinder." + std::to_string(counter++) + ".vtk";
-<<<<<<< HEAD
-            WriteCylinderVTK(filename, cyl_radius, cyl_length, sysFSI.GetFsiBodies()[0]->GetFrame_REF_to_abs(), 100);
-
-            std::cout << "time: " << time <<  ", fsi body force: " << sysFSI.GetFsiBodyForce(0) << std::endl;
-
-
-=======
             WriteCylinderVTK(filename, cyl_radius, cyl_length, sysFSI.GetFsiBodies()[0]->GetFrameRefToAbs(), 100);
->>>>>>> develop
         }
 
         // Render SPH particles
@@ -358,15 +340,8 @@ int main(int argc, char* argv[]) {
                 break;
         }
 
-<<<<<<< HEAD
-        //std::cout << "step: " << current_step << "\ttime: " << time << "\tRTF: " << sysFSI.GetRTF()
-        //          << "\tcyl z: " << sysMBS.Get_bodylist()[1]->GetPos().z() << std::endl;
-
-        sysFSI.GetFsiBodies()[0]->GetAppliedForce().z();
-=======
         std::cout << "step: " << current_step << "\ttime: " << time << "\tRTF: " << sysFSI.GetRTF()
                   << "\tcyl z: " << sysMBS.GetBodies()[1]->GetPos().z() << std::endl;
->>>>>>> develop
 
         // Call the FSI solver
         sysFSI.DoStepDynamics_FSI();

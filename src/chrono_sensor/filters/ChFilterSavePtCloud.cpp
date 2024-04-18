@@ -49,11 +49,7 @@ CH_SENSOR_API void ChFilterSavePtCloud::Apply() {
         csv_writer << m_host_buffer->Buffer[i].x << m_host_buffer->Buffer[i].y << m_host_buffer->Buffer[i].z
                    << m_host_buffer->Buffer[i].intensity << std::endl;
     }
-<<<<<<< HEAD
-    csv_writer.write_to_file(filename, "x,y,z,intensity");
-=======
     csv_writer.WriteToFile(filename);
->>>>>>> develop
 }
 
 CH_SENSOR_API void ChFilterSavePtCloud::Initialize(std::shared_ptr<ChSensor> pSensor,

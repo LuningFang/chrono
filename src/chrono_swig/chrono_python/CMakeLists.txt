@@ -892,8 +892,6 @@ endif()
   install(FILES "${CHPY_VEHICLE_PY_FILE}" DESTINATION "${CH_INSTALL_PYTHON}/${CHPY_PACKAGENAME}")
 
 #-----------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
 # MODULE for the parser python wrapper.
 #-----------------------------------------------------------------------------
 
@@ -973,7 +971,6 @@ endif()
 
 
 #-----------------------------------------------------------------------------
->>>>>>> develop
 # MODULE for the ros python wrapper.
 #-----------------------------------------------------------------------------
 
@@ -997,8 +994,6 @@ if(ENABLE_MODULE_ROS)
 
   # Create the SWIG module.
 
-<<<<<<< HEAD
-=======
   # Make sure CHRONO_PARSERS_URDF and/or CHRONO_SENSOR is defined for the SWIG processor
   if (ENABLE_MODULE_PARSERS AND HAVE_URDF)
     set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_PARSERS_URDF")
@@ -1011,7 +1006,6 @@ if(ENABLE_MODULE_ROS)
     set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_ROS_HAS_INTERFACES")
   endif()
 
->>>>>>> develop
   if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
     SWIG_ADD_MODULE(${CHPY_ROS} python ${CHPY_ROS_MODULE_FILE})
   else()
@@ -1041,10 +1035,6 @@ if(ENABLE_MODULE_ROS)
 
   # Copy PY file in a package dir
   set(CHPY_ROS_PY_FILE "${CMAKE_SWIG_OUTDIR}/${CHPY_ROS}.py")
-<<<<<<< HEAD
-=======
-
->>>>>>> develop
   set(CHPY_ROS_PYD_PATH $<TARGET_FILE_DIR:${SWIG_MODULE_${CHPY_ROS}_REAL_NAME}>)
 
   add_custom_command(TARGET ${SWIG_MODULE_${CHPY_ROS}_REAL_NAME}

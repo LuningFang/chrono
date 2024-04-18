@@ -78,12 +78,6 @@
 
 // If module ROS was enabled, define CHRONO_ROS
 @CHRONO_ROS@
-<<<<<<< HEAD
-
-// If module PARDISOPROJECT was enabled, define CHRONO_PARDISOPROJECT
-@CHRONO_PARDISOPROJECT@
-=======
->>>>>>> develop
 
 // If module MODAL was enabled, define CHRONO_MODAL
 @CHRONO_MODAL@

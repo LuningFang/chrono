@@ -2152,7 +2152,7 @@ std::shared_ptr<fea::ChMesh> ChSystemFsi::GetFsiMesh() const {
 }
 
 
-ChVector<float> ChSystemFsi::GetFsiBodyForce(int i) const {
+ChVector3d ChSystemFsi::GetFsiBodyForce(int i) const {
 
     thrust::host_vector<Real3> forcesH = m_sysFSI->fsiGeneralData->rigid_FSI_ForcesD;
     return utils::ToChVector(forcesH[i]);

@@ -39,15 +39,11 @@
 #include "chrono/physics/ChLinkMotorRotationTorque.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
-<<<<<<< HEAD
-#include "chrono/geometry/ChTriangleMeshConnected.h"
-=======
 
 #ifdef HAVE_ROS
     #include "ament_index_cpp/get_package_prefix.hpp"
     #include "ament_index_cpp/get_package_share_directory.hpp"
 #endif
->>>>>>> develop
 
 namespace chrono {
 namespace parsers {

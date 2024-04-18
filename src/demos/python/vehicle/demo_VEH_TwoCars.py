@@ -44,11 +44,7 @@ def main():
 
     # Create and initialize the first vehicle
     hmmwv_1 = veh.HMMWV_Reduced(sys)
-<<<<<<< HEAD
-    hmmwv_1.SetInitPosition(chrono.ChCoordsysD(chrVisualizationType_MESHono.ChVectorD(0, -1.5, 1.0), chrono.ChQuaternionD(1, 0, 0, 0)))
-=======
     hmmwv_1.SetInitPosition(chrono.ChCoordsysd(chrono.ChVector3d(0, -1.5, 1.0), chrono.ChQuaterniond(1, 0, 0, 0)))
->>>>>>> develop
     hmmwv_1.SetEngineType(veh.EngineModelType_SIMPLE)
     hmmwv_1.SetTransmissionType(veh.TransmissionModelType_AUTOMATIC_SIMPLE_MAP)
     hmmwv_1.SetDriveType(veh.DrivelineTypeWV_RWD)

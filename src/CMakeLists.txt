@@ -915,15 +915,12 @@ else()
   set(CHRONO_SYNCHRONO "#undef CHRONO_SYNCHRONO")
 endif()
 
-<<<<<<< HEAD
-=======
 if(ENABLE_MODULE_FMI)
   set(CHRONO_FMI "#define CHRONO_FMI")
 else()
   set(CHRONO_FMI "#undef CHRONO_FMI")
 endif()
 
->>>>>>> develop
 if(ENABLE_MODULE_ROS)
   set(CHRONO_ROS "#define CHRONO_ROS")
 else()

@@ -7,15 +7,11 @@
 # List all ISO2631 demos
 
 set(DEMOS
-<<<<<<< HEAD:src/demos/vehicle/external_driver/CMakeLists.txt
-#	demo_VEH_Controller_ExternalDriver
-=======
     demo_VEH_Test_ISO2631_Ride
     demo_VEH_Test_ISO2631_Shock
     demo_VEH_Test_Accel
     demo_VEH_Test_FEDA_SSC
     demo_VEH_Test_FMTV_Ride
->>>>>>> develop:src/demos/vehicle/wheeled_tests/CMakeLists.txt
 )
 
 if(HAVE_OPENCRG)
