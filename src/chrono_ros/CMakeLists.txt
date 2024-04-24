@@ -153,7 +153,9 @@ if (CH_ROS_HAS_INTERFACES)
   list(APPEND CH_ROS_ROBOT_HANDLER_FILES
     handlers/robot/viper/ChROSViperDCMotorControlHandler.h
     handlers/robot/viper/ChROSViperDCMotorControlHandler.cpp
-  )
+    handlers/robot/rassor/ChROSRassorSpeedControlHandler.h
+    handlers/robot/rassor/ChROSRassorSpeedControlHandler.cpp
+    )
 endif()
 source_group("robot_handler" FILES ${CH_ROS_ROBOT_HANDLER_FILES})
 
