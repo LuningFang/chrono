@@ -11,6 +11,7 @@ list(APPEND DEMOS demo_ROS_custom_handler)
 
 if (CH_ROS_HAS_INTERFACES)
   list(APPEND DEMOS demo_ROS_viper)
+  list(APPEND DEMOS demo_ROS_rassor)
 endif()
 
 if (HAVE_URDF)
