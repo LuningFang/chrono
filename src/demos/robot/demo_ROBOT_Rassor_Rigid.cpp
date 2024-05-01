@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
     // Create the ground.
     auto ground_mat = chrono_types::make_shared<ChContactMaterialNSC>();
     auto ground = chrono_types::make_shared<ChBodyEasyBox>(30, 30, 1, 100, true, true, ground_mat);
-    ground->SetPos(ChVector3d(0, 0, -0.5));
+    ground->SetPos(ChVector3d(0, 0, -0.25));
     ground->SetFixed(true);
     ground->GetVisualShape(0)->SetTexture(GetChronoDataFile("textures/concrete.jpg"), 60, 45);
     sys.Add(ground);
@@ -178,19 +178,26 @@ int main(int argc, char* argv[]) {
         // Set current steering angle
         double time = rassor.GetSystem()->GetChTime();
 
-        for (int i = 0; i < 4; i++) {
-            driver->SetDriveMotorSpeed((RassorWheelID)i, 2.0);
-        }
+        //for (int i = 0; i < 4; i++) {
+            driver->SetDriveMotorSpeed((RassorWheelID)0, 0.0);
+            driver->SetDriveMotorSpeed((RassorWheelID)2, 0.0);
+            driver->SetDriveMotorSpeed((RassorWheelID)1, 0.0);
+            driver->SetDriveMotorSpeed((RassorWheelID)3, 0.0);
+
+
+
+
+        //}
 
         driver->SetRazorMotorSpeed((RassorDirID)0, 3.14);
         driver->SetRazorMotorSpeed((RassorDirID)1, -3.14);
 
         if (time <= 2.0) {
-            driver->SetArmMotorSpeed((RassorDirID)0, -0.5);
-            driver->SetArmMotorSpeed((RassorDirID)1, 0.5);
+            //driver->SetArmMotorAngle((RassorDirID)0, -CH_PI_2);
+            driver->SetArmMotorAngle((RassorDirID)1, -CH_PI_4);
         } else {
-            driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
-            driver->SetArmMotorSpeed((RassorDirID)1, 0.0);
+            driver->SetArmMotorAngle((RassorDirID)0, 0.0);
+            driver->SetArmMotorAngle((RassorDirID)1, 0.0);
         }
 
         std::cout << time << std::endl;

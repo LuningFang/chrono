@@ -353,7 +353,7 @@ class CH_MODELS_API RassorDriver {
     Rassor* rassor;  ///< associated Rassor rover
 
     std::array<double, 4> drive_speeds;  ///< angular speeds for drive motors
-    std::array<double, 2> arm_speeds;    ///< angular speeds for arm motors
+    std::array<double, 2> arm_angle;    ///< angular position for should joint
     std::array<double, 2> razor_speeds;  ///< angular speeds for razor motors
 
     friend class Rassor;
@@ -372,7 +372,7 @@ class CH_MODELS_API RassorSpeedDriver : public RassorDriver {
     void SetDriveMotorSpeed(RassorWheelID wheel_id, double drive_speed);
 
     /// Set current arm motor speed input.
-    void SetArmMotorSpeed(RassorDirID dir_id, double arm_speed);
+    void SetArmMotorAngle(RassorDirID dir_id, double arm_angle);
 
     /// Set current razor motor speed input.
     void SetRazorMotorSpeed(RassorDirID dir_id, double razor_speed);

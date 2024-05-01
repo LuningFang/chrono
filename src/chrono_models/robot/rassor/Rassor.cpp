@@ -355,7 +355,7 @@ void Rassor::Initialize(const ChFrame<>& pos) {
         m_drive_motors[i]->SetMotorFunction(m_drive_motor_funcs[i]);
     }
 
-    // initialize the bottom motor for rassor arm
+    // initialize motor at the shoulder joint
     double ax = 0.25;
     double ay = 0.0;
     double az = 0.0;
@@ -366,11 +366,11 @@ void Rassor::Initialize(const ChFrame<>& pos) {
         if (i == 1)
             m_arm_1_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.25);
         m_arm_1_motors[i] =
-            AddMotorSpeed(m_chassis->GetBody(), m_arms[i]->GetBody(), m_chassis, arm_motor_rel_pos[i], z2y);
+            AddMotorAngle(m_chassis->GetBody(), m_arms[i]->GetBody(), m_chassis, arm_motor_rel_pos[i], z2y);
         m_arm_1_motors[i]->SetMotorFunction(m_arm_1_motor_funcs[i]);
     }
 
-    // intialize the top motor for rassor arm and the rassor rasor
+    // intialize the speed motor of the drum
     double rx = 0.71883;
     double ry = 0.0;
     double rz = -0.00136;
@@ -452,7 +452,7 @@ void Rassor::Update() {
     }
 
     for (int i = 0; i < 2; i++) {
-        double arm_speed = m_driver->arm_speeds[i];
+        double arm_speed = m_driver->arm_angle[i];
         double razor_speed = m_driver->razor_speeds[i];
         m_arm_1_motor_funcs[i]->SetConstant(arm_speed);
         m_arm_2_motor_funcs[i]->SetConstant(razor_speed);
@@ -499,7 +499,7 @@ void Rassor::writeMeshFile(const std::string& out_dir, int frame_number,  bool s
 
 // =============================================================================
 
-RassorDriver::RassorDriver() : drive_speeds({0, 0, 0, 0}), arm_speeds({0, 0}), razor_speeds({0, 0}), rassor(nullptr) {}
+RassorDriver::RassorDriver() : drive_speeds({0, 0, 0, 0}), arm_angle({0, 0}), razor_speeds({0, 0}), rassor(nullptr) {}
 
 RassorSpeedDriver::RassorSpeedDriver(double time_ramp) : m_ramp(time_ramp) {}
 
@@ -509,8 +509,8 @@ void RassorSpeedDriver::SetDriveMotorSpeed(RassorWheelID wheel_id, double drive_
 }
 
 /// Set current arm motor speed input.
-void RassorSpeedDriver::SetArmMotorSpeed(RassorDirID dir_id, double arm_speed) {
-    arm_speeds[dir_id] = arm_speed;
+void RassorSpeedDriver::SetArmMotorAngle(RassorDirID dir_id, double arm_speed) {
+    arm_angle[dir_id] = arm_speed;
 }
 
 /// Set current razor motor speed input.
