@@ -21,8 +21,10 @@
 
 #include "chrono_ros/handlers/ChROSHandlerUtilities.h"
 
-#include "chrono_ros_interfaces/msg/rassor_wheel_id.hpp"
-#include "chrono_ros_interfaces/msg/rassor_drum_id.hpp"
+// #include "chrono_ros_interfaces/msg/rassor_wheel_id.hpp"
+// #include "chrono_ros_interfaces/msg/rassor_drum_id.hpp"
+
+#include "sensor_msgs/msg/joint_state.hpp"
 
 using std::placeholders::_1;
 
@@ -43,52 +45,49 @@ bool ChROSRassorSpeedControlHandler::Initialize(std::shared_ptr<ChROSInterface> 
         return false;
     }
 
-    m_subscription = node->create_subscription<chrono_ros_interfaces::msg::RassorDriver>(
+    m_subscription = node->create_subscription<sensor_msgs::msg::JointState>(
         m_topic_name, 1, std::bind(&ChROSRassorSpeedControlHandler::Callback, this, _1));
 
     return true;
 }
 
-void ChROSRassorSpeedControlHandler::Callback(const chrono_ros_interfaces::msg::RassorDriver& msg) {
+void ChROSRassorSpeedControlHandler::Callback(const sensor_msgs::msg::JointState& msg) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_msg = msg;
 }
 
 void ChROSRassorSpeedControlHandler::Tick(double time) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    // This is the real stuff 
-    // for (auto steering_command : m_msg.driver_commands.steering_list) {
-    //     if (steering_command.wheel_id != chrono_ros_interfaces::msg::ViperWheelID::V_UNDEFINED)
-    //         m_driver->SetSteering(steering_command.angle,
-    //                               static_cast<chrono::viper::ViperWheelID>(steering_command.wheel_id));
-    //     else
-    //         m_driver->SetSteering(steering_command.angle);
-    // }
+    // for (size_t i = 0; i < m_msg.name.size(); ++i){
+        
+        if (m_msg.name.size() != 0 ){
 
-    // m_driver->SetLifting(m_msg.driver_commands.lifting);
-    // m_driver->SetMotorStallTorque(m_msg.stall_torque.torque,
-    //                               static_cast<chrono::viper::ViperWheelID>(m_msg.stall_torque.wheel_id));
-    // m_driver->SetMotorNoLoadSpeed(m_msg.no_load_speed.speed,
-    //                               static_cast<chrono::viper::ViperWheelID>(m_msg.no_load_speed.wheel_id));
-    // command for the wheels
-    for (auto driving_command : m_msg.wheel_speed_list){
+        std::string name = m_msg.name[0];
+        float vel = m_msg.velocity[0];
+        float angle = m_msg.position[0];
 
-        m_driver->SetDriveMotorSpeed(static_cast<chrono::rassor::RassorWheelID>(driving_command.wheel_id) , driving_command.speed);
+        std::cout << name << ", " << vel << std::endl;
+
+
+        if (name == "LF/driving") {
+            m_driver->SetDriveMotorSpeed((RassorWheelID)0, vel);
+        } else if (name == "LR/driving") {
+            m_driver->SetDriveMotorSpeed((RassorWheelID)2, vel);
+        } else if (name == "RF/driving") {
+            m_driver->SetDriveMotorSpeed((RassorWheelID)1, vel);
+        } else if (name == "RR/driving") {
+            m_driver->SetDriveMotorSpeed((RassorWheelID)3, vel);
+        } else if (name == "FB/shoulder") {
+            m_driver->SetArmMotorAngle((RassorDirID)0, angle);
+        } else if (name == "RB/shoulder") {
+            m_driver->SetArmMotorAngle((RassorDirID)1, angle);
+        } else if (name == "FB/bucket") {
+            m_driver->SetRazorMotorSpeed((RassorDirID)0, vel);
+        } else if (name == "RB/bucket") {
+            m_driver->SetRazorMotorSpeed((RassorDirID)1, vel);
+        }
+
     }
-
-    // command for the arm
-    for (auto arm_command : m_msg.arm_speed_list){
-        m_driver->SetArmMotorSpeed(static_cast<chrono::rassor::RassorDirID>(arm_command.drum_id), arm_command.speed); 
-    }
-
-    for (auto drum_command : m_msg.drum_speed_list){
-        m_driver->SetRazorMotorSpeed(static_cast<chrono::rassor::RassorDirID>(drum_command.drum_id), drum_command.speed); 
-        std::cout << "apply speed to drum: " << drum_command.speed << " drum number: " << drum_command.drum_id  << std::endl;
-        std::cout.flush();
-    }
-
-
-
 }
 
 }  // namespace ros

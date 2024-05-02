@@ -21,10 +21,10 @@
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBodyEasy.h"
 
-// #include "chrono/assets/ChVisualSystem.h"
+#include "chrono/assets/ChVisualSystem.h"
 // #ifdef CHRONO_IRRLICHT
-//     #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
-// using namespace chrono::irrlicht;
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
+using namespace chrono::irrlicht;
 // #endif
 
 #include "chrono_ros/ChROSManager.h"
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 
     Rassor rassor(&sys, RassorWheelType::RealWheel);
     rassor.SetDriver(driver);
-    rassor.Initialize(ChFrame<>(ChVector3d(0, 0, 0.5), QUNIT));
+    rassor.Initialize(ChFrame<>(ChVector3d(0, 0, 0.25), QUNIT));
     // driver->SetRazorMotorSpeed((RassorDirID)0, 3.14);
     // driver->SetRazorMotorSpeed((RassorDirID)1, -3.14);
 
@@ -81,18 +81,18 @@ int main(int argc, char* argv[]) {
 //     switch (vis_type) {
 //         case ChVisualSystem::Type::IRRLICHT: {
 // #ifdef CHRONO_IRRLICHT
-//             auto vis_irr = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-//             vis_irr->AttachSystem(&sys);
-//             vis_irr->SetCameraVertical(CameraVerticalDir::Z);
-//             vis_irr->SetWindowSize(800, 600);
-//             vis_irr->SetWindowTitle("Viper Rover on Rigid Terrain");
-//             vis_irr->Initialize();
-//             vis_irr->AddLogo();
-//             vis_irr->AddSkyBox();
-//             vis_irr->AddCamera(ChVector3d(3, 3, 1));
-//             vis_irr->AddTypicalLights();
-//             vis_irr->EnableContactDrawing(ContactsDrawMode::CONTACT_DISTANCES);
-//             vis_irr->EnableShadows();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->AttachSystem(&sys);
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Viper Rover on Rigid Terrain");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddCamera(ChVector3d(3, 3, 1));
+    vis->AddTypicalLights();
+    vis->EnableContactDrawing(ContactsDrawMode::CONTACT_DISTANCES);
+    vis->EnableShadows();
 
 //             vis = vis_irr;
 // #endif
@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
 
     // Create a subscriber to the driver inputs
     auto driver_inputs_rate = 25;
-    auto driver_inputs_topic_name = "~/input/driver_inputs";
+    auto driver_inputs_topic_name = "/joint/command";
     auto driver_inputs_handler = chrono_types::make_shared<ChROSRassorSpeedControlHandler>(driver_inputs_rate, driver,
                                                                                             driver_inputs_topic_name);
     ros_manager->RegisterHandler(driver_inputs_handler);
@@ -146,16 +146,18 @@ int main(int argc, char* argv[]) {
 
     // Simulation loop
 // #if !defined(CHRONO_IRRLICHT) && !defined(CHRONO_VSG)
-    while (time < time_end) {
+    // while (time < time_end) {
 // #else
-//     while (vis->Run()) {
-//         vis->BeginScene();
-//         vis->Render();
-//         vis->EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->Render();
+        vis->EndScene();
 // #endif
         // Set current steering angle
         double time = sys.GetChTime();
 
+        std::cout << "position: " << rassor.GetChassisPos() << std::endl;
+        std::cout << "drum: " << rassor.GetRazor((RassorDirID)0)->GetPos() << std::endl;
         // Updates
         rassor.Update();
         if (!ros_manager->Update(time, time_step))

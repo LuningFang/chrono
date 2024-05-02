@@ -25,7 +25,7 @@
 #include "chrono_models/robot/rassor/Rassor.h"
 
 #include "rclcpp/subscription.hpp"
-#include "chrono_ros_interfaces/msg/rassor_driver.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 
 #include <mutex>
 
@@ -54,14 +54,14 @@ class ChROSRassorSpeedControlHandler : public ChROSHandler {
   private:
     /// NOTE: This will only update the local m_inputs variable. The driver will receive
     /// the new commands in the Tick() function.
-    void Callback(const chrono_ros_interfaces::msg::RassorDriver& msg);
+    void Callback(const sensor_msgs::msg::JointState& msg);
 
   private:
     std::shared_ptr<chrono::rassor::RassorSpeedDriver> m_driver;  ///< handle to the driver
 
     const std::string m_topic_name;                         ///< name of the topic to publish to
-    chrono_ros_interfaces::msg::RassorDriver m_msg;  ///< message to publish
-    rclcpp::Subscription<chrono_ros_interfaces::msg::RassorDriver>::SharedPtr
+    sensor_msgs::msg::JointState m_msg;  ///< message to publish
+    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
         m_subscription;  ///< the publisher for the imu message
 
     std::mutex m_mutex;
