@@ -28,6 +28,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 
 #include <mutex>
+#include <queue>
 
 namespace chrono {
 namespace ros {
@@ -65,6 +66,8 @@ class ChROSRassorSpeedControlHandler : public ChROSHandler {
         m_subscription;  ///< the publisher for the imu message
 
     std::mutex m_mutex;
+
+    std::queue<sensor_msgs::msg::JointState> messageQueue;
 };
 
 /// @} ros_robot_handlers

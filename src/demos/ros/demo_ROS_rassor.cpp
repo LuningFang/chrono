@@ -156,8 +156,10 @@ int main(int argc, char* argv[]) {
         // Set current steering angle
         double time = sys.GetChTime();
 
-        std::cout << "position: " << rassor.GetChassisPos() << std::endl;
-        std::cout << "drum: " << rassor.GetRazor((RassorDirID)0)->GetPos() << std::endl;
+        std::cout << "Time: " << time << std::endl;
+
+        // std::cout << "position: " << rassor.GetChassisPos() << std::endl;
+        // std::cout << "drum: " << rassor.GetRazor((RassorDirID)0)->GetPos() << std::endl;
         // Updates
         rassor.Update();
         if (!ros_manager->Update(time, time_step))
