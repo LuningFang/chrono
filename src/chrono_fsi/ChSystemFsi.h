@@ -270,7 +270,7 @@ class CH_FSI_API ChSystemFsi {
     std::vector<std::shared_ptr<ChBody>>& GetFsiBodies() const;
 
 
-    ChVector3d ChSystemFsi::GetFsiBodyForce(int i) const;
+    ChVector3d GetFsiBodyForce(int i) const;
 
 
     /// Return the FSI mesh for flexible elements.
