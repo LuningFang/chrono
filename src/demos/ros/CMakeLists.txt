@@ -10,6 +10,10 @@ set(DEMOS "")
 list(APPEND DEMOS demo_ROS_custom_handler)
 list(APPEND DEMOS demo_ROS_rassor)
 
+if(ENABLE_MODULE_FSI)
+list(APPEND DEMOS demo_ROS_rassor_SPH)
+endif()
+
 if (CH_ROS_HAS_INTERFACES)
   list(APPEND DEMOS demo_ROS_viper)
 endif()
