@@ -99,11 +99,11 @@ void ChROSRassorSpeedControlHandler::Tick(double time) {
             } else if (name == "FB/shoulder") {
                 m_driver->SetArmMotorAngle((RassorDirID)0, -angle);  // front bucket 
             } else if (name == "RB/shoulder") {
-                m_driver->SetArmMotorAngle((RassorDirID)1, +angle);   // rear bucket 
+                m_driver->SetArmMotorAngle((RassorDirID)1, angle);   // rear bucket 
             } else if (name == "FB/bucket") {
-                m_driver->SetRazorMotorSpeed((RassorDirID)0, -vel);
+                m_driver->SetRazorMotorSpeed((RassorDirID)0, vel);
             } else if (name == "RB/bucket") {
-                m_driver->SetRazorMotorSpeed((RassorDirID)1, vel);
+                m_driver->SetRazorMotorSpeed((RassorDirID)1, -vel);
             }
 
         }
