@@ -148,13 +148,13 @@ source_group("sensor_handler" FILES ${CH_ROS_SENSOR_HANDLER_FILES})
 set(CH_ROS_ROBOT_HANDLER_FILES
   handlers/robot/ChROSRobotModelHandler.h
   handlers/robot/ChROSRobotModelHandler.cpp
-)
+  handlers/robot/rassor/ChROSRassorSpeedControlHandler.h
+  handlers/robot/rassor/ChROSRassorSpeedControlHandler.cpp
+  )
 if (CH_ROS_HAS_INTERFACES)
   list(APPEND CH_ROS_ROBOT_HANDLER_FILES
     handlers/robot/viper/ChROSViperDCMotorControlHandler.h
     handlers/robot/viper/ChROSViperDCMotorControlHandler.cpp
-    handlers/robot/rassor/ChROSRassorSpeedControlHandler.h
-    handlers/robot/rassor/ChROSRassorSpeedControlHandler.cpp
     )
 endif()
 source_group("robot_handler" FILES ${CH_ROS_ROBOT_HANDLER_FILES})
