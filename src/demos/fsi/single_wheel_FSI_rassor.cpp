@@ -55,7 +55,7 @@ double smalldis = 1.0e-9;
 //double bxDim = 5.0 + smalldis;
 double bxDim = 2.0 + smalldis;
 double byDim = 0.5 + smalldis;   // byDim depending on the wheel width
-double bzDim = 0.15 + smalldis;
+double bzDim = 0.1 + smalldis;
 
 // Size of the wheel
 double wheel_radius = 0.2;
@@ -65,10 +65,21 @@ double wheel_slip = 0.0;
 //double wheel_vel = -0.05;
 //double wheel_AngVel = -0.7; // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
 
-double wheel_vel = 0.2;
-double wheel_AngVel = 2.78;  // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
 
-double total_mass = 2.5;
+// Test 4
+//double wheel_vel = 0.2;
+//double wheel_AngVel = 2.78;  // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
+
+// Test 3
+ //double wheel_vel = 0.15;
+ //double wheel_AngVel = 2.09;  // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
+
+ //Test 2
+ double wheel_vel = 0.15;
+ double wheel_AngVel = 2.09;  // for rTot = 250mm, 0.4 rad/s ~ 0.1 m/s linear velocity
+
+
+double total_mass = 2.5 * 2.;
 
 // Initial Position of wheel
 ChVector3d wheel_IniPos(-bxDim / 2 + wheel_radius * 1.2, 0.0, wheel_radius + bzDim/2.0);
@@ -78,7 +89,7 @@ ChVector3d wheel_IniVel(0.0, 0.0, 0.0f);
 // Simulation time and stepsize
 //double total_time = 5.0;
 //double total_time = 60.0;
-double total_time = 10;
+double total_time = 20;
 double dT;
 
 // linear actuator and angular actuator
@@ -87,14 +98,14 @@ auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
 
 // Save data as csv files to see the results off-line using Paraview
 bool output = true;
-int out_fps = 100;
+int out_fps = 200;
 
 // Output directories and settings
 std::string out_dir = "/root/sbel/outputs/FSI_Single_Wheel_Test_RealSlope_mode_slope";
 
 // Enable/disable run-time visualization (if Chrono::OpenGL is available)
 bool render = false;
-float render_fps = 100;
+float render_fps = 10;
 
 // Verbose terminal output
 bool verbose_fsi = true;
@@ -195,7 +206,7 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 
     // Create the chassis -- always THIRD body in the system
     auto chassis = chrono_types::make_shared<ChBody>();
-    chassis->SetMass(total_mass/2.0f);
+    chassis->SetMass(total_mass / 2.0);
     chassis->SetPos(drum->GetPos());
     chassis->EnableCollision(false);
     chassis->SetFixed(false);
@@ -203,9 +214,9 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
     // Add geometry of the chassis.
     sysMBS.AddBody(chassis);
 
-    // Create the axle -- always FOURTH body in the system
+    // Create the axle -- always FOURTH body in the system # this weight affect the loading!!! not chassis!!!
     auto axle = chrono_types::make_shared<ChBody>();
-    axle->SetMass(total_mass * 1.0 / 2.0);
+    axle->SetMass(total_mass / 2.0);
     axle->SetPos(drum->GetPos());
     axle->EnableCollision(false);
     axle->SetFixed(false);
@@ -274,7 +285,7 @@ int main(int argc, char* argv[]) {
 
     //total_mass = 17.5;
     slope_angle = 0;
-    out_dir = "single_drum_tests/alpha_" + std::string(argv[1]);
+    out_dir = "single_drum_tests_correct_drum_weight/alpha_" + std::string(argv[1]);
     //wheelfilename = "C:/Users/fang/source/nasa_singlewheel/wheel_obj/withGrousers.obj";
 
     std::cout << "total_mass: " << total_mass << "\n";
@@ -337,8 +348,8 @@ int main(int argc, char* argv[]) {
     sysFSI.SetSPHMethod(FluidDynamics::WCSPH);
 
     // Set up the periodic boundary condition (if not, set relative larger values)
-    ChVector3d cMin(-bxDim / 2 * 10, -byDim / 2 - 0.5 * iniSpacing, -bzDim * 10);
-    ChVector3d cMax( bxDim / 2 * 10,  byDim / 2 + 0.5 * iniSpacing,  bzDim * 10);
+    ChVector3d cMin(-bxDim / 2 * 1.2, -byDim / 2 - 0.5 * iniSpacing, -bzDim * 1.2);
+    ChVector3d cMax( bxDim / 2 * 1.2,  byDim / 2 + 0.5 * iniSpacing,  bzDim * 10);
     sysFSI.SetBoundaries(cMin, cMax);
 
     // Initialize the SPH particles
@@ -379,6 +390,11 @@ int main(int argc, char* argv[]) {
     if (output) {
         myFile.open(out_dir + "/results.txt", std::ios::trunc);
         myDBP_Torque.open(out_dir + "/DBP_Torque.txt", std::ios::trunc);
+        myFile << "Time,x,y,y,vx,omg_y,fx,fy,fz,trq_x,trq_y,trq_z\n";
+        myFile << time << ", " << w_pos.x() - w_pos_init.x() << ", " << w_pos.y() - w_pos_init.y() << ", "
+               << w_pos.z() - w_pos_init.z() << ", " << w_vel.x() << ", " << angvel.y() << ", " << force.x() << ","
+               << force.y() << ", " << force.z() << ", " << torque.x() << ", " << torque.y() << ", " << torque.z()
+               << "\n"; 
     }
 
 
@@ -416,11 +432,10 @@ int main(int argc, char* argv[]) {
 
         reaction = actuator->GetReaction2();
         force = reaction.force;
-        torque = reaction.torque;
+        torque = motor->GetReaction1().torque;
         w_pos = wheel->GetPos();
         w_vel = wheel->GetPosDt();
         angvel = wheel->GetAngVelLocal();
-
 
 
         if (time < 0.1)
@@ -430,15 +445,13 @@ int main(int argc, char* argv[]) {
 
         //}
 
-        if (output) {
-            myFile << time << "\t" << w_pos.x() << "\t" << w_pos.y() << "\t" << w_pos.z() << "\t" << w_vel.x() << "\t"
-                << w_vel.y() << "\t" << w_vel.z() << "\t" << angvel.x() << "\t" << angvel.y() << "\t" << angvel.z()
-                << "\t" << force.x() << "\t" << force.y() << "\t" << force.z() << "\t" << torque.x() << "\t"
-                << torque.y() << "\t" << torque.z() << "\n";
-            myDBP_Torque << time << "\t" << force.x() << "\t" << torque.z() << "\n";
+        if (output && current_step % output_steps == 0) {
+            //myFile << time << "," << w_pos.x() << "\t" << w_pos.y() << "\t" << w_pos.z() << "\t" << w_vel.x() << "\t" << angvel.y() << "\t" << angvel.z() << torque.x() << "\t"
+            //    << torque.y() << "\t" << torque.z() << "\n";
+            myFile << time << ", " << w_pos.x() - w_pos_init.x() << ", " << w_pos.y() - w_pos_init.y() << ", " << w_pos.z() - w_pos_init.z() << ", " << w_vel.x() << ", " << angvel.y() << ", " << force.x() << ", " << force.y() << ", " << force.z() << ", " << torque.x() << ", " << torque.y() << ", " << torque.z() << "\n"; 
         }
 
-        if (output && current_step % output_steps == 0) {
+        if (output && current_step % render_steps == 0) {
          //if (output) {
 
             std::cout << "-------- Output" << std::endl;
@@ -462,6 +475,9 @@ int main(int argc, char* argv[]) {
         current_step++;
 
         if (w_pos.x() + wheel_radius > bxDim / 2.0f) {
+            std::cout << "Wheel has reached the end of the container" << std::endl;
+            std::cout << "  wheel position:         " << w_pos << std::endl;
+            std::cout << "container position, " << bxDim / 2.0f << std::endl;
             break;
         }
 
