@@ -52,7 +52,7 @@ double density = 2600.0;
 // Dimension of the space domain
 double bxDim = 3.0; // this for real
 //double bxDim = 3.0; // use this for debug
-double byDim = 1.6;
+double byDim = 0.9;
 double bzDim = 0.1;
 
 // Rover initial location
@@ -94,16 +94,15 @@ bool CreateSubDirectories(std::string out_dir);
 int main(int argc, char* argv[]) {
 
     // check number of command line inputs
-    if (argc != 4) {
-        std::cout << "usage: ./demo_ROBOT_Rassor_SPH <TestID> <artificial_viscosity> <output_folder>" << std::endl;
-        return 1;
-    }
+    //if (argc != 4) {
+    //    std::cout << "usage: ./demo_ROBOT_Rassor_SPH <TestID> <artificial_viscosity> <output_folder>" << std::endl;
+    //    return 1;
+    //}
 
     // get the TestID from the command line
-    int TestID = std::stoi(argv[1]);
-    double artificial_viscosity = std::stod(argv[2]);
-    std::string out_dir = std::string(argv[3]);
-
+    int TestID = 2;
+    double artificial_viscosity = 0.1;
+    std::string out_dir = "full_vehicle_raise_drum";
 
     double wheel_radius = 0.22;
     double wheel_driver_speed  = rover_velocity_array[TestID] / wheel_radius;
@@ -113,6 +112,16 @@ int main(int argc, char* argv[]) {
     out_dir = GetChronoOutputPath() + out_dir + "/";
 
     if (!CreateSubDirectories(out_dir)) { return 1; }
+
+    // create a csv file that writes down all the output
+    std::ofstream info_file;
+    info_file.open(out_dir + "/info.csv");
+    // write down header line
+    // time,x,y,z,yaw,pitch,roll,front_fx,front_fy,front_fz,front_tx,front_ty,front_tz,back_fx,back_fy,back_fz,back_tx,back_ty,back_tz
+    info_file << "time,x,y,z,roll,pitch,yaw,front_fx,front_fy,front_fz,front_tx,front_ty,front_tz,back_fx,back_fy,back_"
+                 "fz,back_tx,back_ty,back_tz"
+              << std::endl;
+
 
     // Create a physical system and a corresponding FSI system
     ChSystemNSC sysMBS;
@@ -238,14 +247,35 @@ int main(int argc, char* argv[]) {
         //driver->SetRazorMotorSpeed((RassorDirID)1,  bucket_driver_speed);
 
         // RASSOR 1.0, drum spinning  clock wise
-        driver->SetRazorMotorSpeed((RassorDirID)0,  bucket_driver_speed);
-        driver->SetRazorMotorSpeed((RassorDirID)1, -bucket_driver_speed);
+        driver->SetDrumMotorSpeed((RassorDirID)0,  bucket_driver_speed);
+        driver->SetDrumMotorSpeed((RassorDirID)1, -bucket_driver_speed);
 
 
         for (int i = 0; i < 4; i++) {
             driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed/3.0);
         }
 
+        ChVector3d front_shoulder_joint_force = rover->GetShoulderMotorReactionForce((RassorDirID)0);
+        ChVector3d back_shoulder_joint_force = rover->GetShoulderMotorReactionForce((RassorDirID)1);
+
+        ChVector3d front_shoulder_joint_torque = rover->GetShoulderMotorReactionTorque((RassorDirID)0);
+        ChVector3d back_shoulder_joint_torque = rover->GetShoulderMotorReactionTorque((RassorDirID)1);
+
+        ChVector3d rpy = rover->GetChassisRPY();
+
+
+        // now write the data to the file
+        info_file << time << "," << body->GetPos().x() << "," << body->GetPos().y() << "," << body->GetPos().z() << ","
+              << rpy.x() << "," << rpy.y() << "," << rpy.z() << ","
+			  << front_shoulder_joint_force.x() << "," << front_shoulder_joint_force.y() << "," << front_shoulder_joint_force.z() << ","
+			  << front_shoulder_joint_torque.x() << "," << front_shoulder_joint_torque.y() << "," << front_shoulder_joint_torque.z() << ","
+			  << back_shoulder_joint_force.x() << "," << back_shoulder_joint_force.y() << "," << back_shoulder_joint_force.z() << ","
+			  << back_shoulder_joint_torque.x() << "," << back_shoulder_joint_torque.y() << "," << back_shoulder_joint_torque.z() << std::endl;
+
+        if (time >= 1.0) {
+            // raise backdrum
+            driver->SetShoulderMotorAngle((RassorDirID)1, 0.25);
+        }
 
         //if (time <= 2.0) {
         //    for (int i = 0; i < 4; i++) {
@@ -291,8 +321,13 @@ int main(int argc, char* argv[]) {
 
             if (output && current_step % output_steps == 0) {
                 std::cout << current_step << "  time: " << time << "  sim. time: " << timer() << std::endl;
-                std::cout << "  pos: " << body->GetPos() << std::endl;
-                std::cout << "  vel: " << body->GetPosDt() << std::endl;
+                std::cout << "  pos:            " << body->GetPos() << std::endl;
+                std::cout << "  rpy:            " << rpy.x() / CH_PI * 180. << ", " << rpy.y() / CH_PI * 180.
+                          << ", " << rpy.z() / CH_PI * 180. << std::endl;   
+                std::cout << "  front shoulder: [" << front_shoulder_joint_force << "] N, ["
+                          << front_shoulder_joint_torque << "] mN" << std::endl;
+                std::cout << "  back shoulder:  [" << back_shoulder_joint_force << "] N, ["
+                          << back_shoulder_joint_torque << "] mN" << std::endl;
 
                 sysFSI.PrintParticleToFile(out_dir + "/particles");
                 sysFSI.PrintFsiInfoToFile(out_dir + "/fsi", time);
@@ -313,8 +348,10 @@ int main(int argc, char* argv[]) {
         current_step++;
     }
 
-    if (output)
-        ofile.close();
+    if (output){
+		ofile.close();
+        info_file.close();
+	}
 
     return 0;
 }
@@ -388,10 +425,10 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
     for (int i = 0; i < 2; i++) {
         std::shared_ptr<ChBodyAuxRef> razor_body;
         if (i == 0) {
-            razor_body = rover->GetRazor(RassorDirID::RA_F)->GetBody();
+            razor_body = rover->GetDrum(RassorDirID::RA_F)->GetBody();
         }
         if (i == 1) {
-            razor_body = rover->GetRazor(RassorDirID::RA_B)->GetBody();
+            razor_body = rover->GetDrum(RassorDirID::RA_B)->GetBody();
         }
 
         sysFSI.AddFsiBody(razor_body);

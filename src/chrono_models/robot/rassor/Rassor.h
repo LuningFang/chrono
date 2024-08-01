@@ -230,11 +230,11 @@ class CH_MODELS_API Rassor {
     /// Get the specified rover wheel.
     std::shared_ptr<RassorWheel> GetWheel(RassorWheelID id) const { return m_wheels[id]; }
 
-    /// Get the specified rover wheel.
+    /// Get the specified rover arm.
     std::shared_ptr<RassorArm> GetArm(RassorDirID id) const { return m_arms[id]; }
 
-    /// Get the specified rover wheel.
-    std::shared_ptr<RassorDrum> GetRazor(RassorDirID id) const { return m_razors[id]; }
+    /// Get the specified rover drum.
+    std::shared_ptr<RassorDrum> GetDrum(RassorDirID id) const { return m_drums[id]; }
 
     /// Get chassis position.
     ChVector3d GetChassisPos() const { return m_chassis->GetPos(); }
@@ -273,13 +273,49 @@ class CH_MODELS_API Rassor {
 
     double GetDriveMotorRot_dt(RassorWheelID id){return m_drive_motors[id]->GetMotorAngleDt();}
 
-    double GetArmMotorRot(RassorWheelID id){return m_arm_1_motors[id]->GetMotorAngle();}
+    double GetShoulderMotorRot(RassorDirID id){return m_shoulder_joint_motors[id]->GetMotorAngle();}
 
-    double GetArmMotorRot_dt(RassorWheelID id){return m_arm_1_motors[id]->GetMotorAngleDt();}
+    double GetShoulderMotorRot_dt(RassorDirID id) { return m_shoulder_joint_motors[id]->GetMotorAngleDt(); }
 
-    double GetRazorMotorRot(RassorWheelID id){return m_arm_2_motors[id]->GetMotorAngle();}
+    double GetShoulderMotorRotTorque(RassorDirID id) { return m_shoulder_joint_motors[id]->GetMotorTorque(); }
 
-    double GetRazorMotorRot_dt(RassorWheelID id){return m_arm_2_motors[id]->GetMotorAngleDt();}
+    // shoulder joint reaction force applied to chassis expressed in the chassis frame
+    ChVector3d GetShoulderMotorReactionForce(RassorDirID id) {
+        // this is returning force in the global frame
+        //return m_shoulder_joint_motors[id]->GetFrame1Abs().TransformDirectionLocalToParent(
+        //    m_shoulder_joint_motors[id]->GetReaction1().force);
+
+        // i want to return the force expressed in the frame of the chassis
+        return m_shoulder_joint_motors[id]->GetFrame1Rel().TransformDirectionLocalToParent(
+			m_shoulder_joint_motors[id]->GetReaction2().force);
+    }
+
+    ChVector3d GetShoulderMotorReactionTorque(RassorDirID id) {
+        // this is returning force in the global frame
+        // return m_shoulder_joint_motors[id]->GetFrame1Abs().TransformDirectionLocalToParent(
+        //    m_shoulder_joint_motors[id]->GetReaction1().force);
+
+        // i want to return the force expressed in the frame of the chassis
+        return m_shoulder_joint_motors[id]->GetFrame1Rel().TransformDirectionLocalToParent(
+            m_shoulder_joint_motors[id]->GetReaction2().torque);
+    }
+
+    // 
+    ChVector3d GetChassisRPY() const { return GetChassisRot().GetCardanAnglesXYZ();}
+     
+    //ChVector3d GetShoulderMotorReactionForce2(RassorDirID id) {
+    //    return m_shoulder_joint_motors[id]->GetFrame2Abs().TransformDirectionLocalToParent(
+    //        m_shoulder_joint_motors[id]->GetReaction2().force);
+    //}
+
+
+    double GetDrumMotorRot(RassorDirID id) { return m_drum_joint_motors[id]->GetMotorAngle(); }
+    double GetDrumMotorRot_dt(RassorDirID id) { return m_drum_joint_motors[id]->GetMotorAngleDt(); }
+    double GetDrumMotorRotTorque(RassorDirID id) { return m_drum_joint_motors[id]->GetMotorTorque(); }
+    ChVector3d GetDrumMotorReactionForce(RassorDirID id) { return m_drum_joint_motors[id]->GetReaction1().force; }
+
+
+
 
     /// Get total rover mass.
     double GetRoverMass() const;
@@ -311,15 +347,15 @@ class CH_MODELS_API Rassor {
 
     std::shared_ptr<RassorChassis> m_chassis;              ///< rover chassis
     std::array<std::shared_ptr<RassorWheel>, 4> m_wheels;  ///< rover wheels (LF, RF, LR, RB)
-    std::array<std::shared_ptr<RassorDrum>, 2> m_razors;  ///< rover razors (F,B)
+    std::array<std::shared_ptr<RassorDrum>, 2> m_drums;  ///< rover drums (F,B)
     std::array<std::shared_ptr<RassorArm>, 2> m_arms;      ///< rover arms (F,B)
 
     std::array<std::shared_ptr<ChLinkMotorRotation>, 4> m_drive_motors;    ///< drive motors
     std::array<std::shared_ptr<ChFunctionConst>, 4> m_drive_motor_funcs;  ///< drive motor functions
-    std::array<std::shared_ptr<ChLinkMotorRotation>, 2> m_arm_1_motors;    ///< drive motors
-    std::array<std::shared_ptr<ChFunctionConst>, 2> m_arm_1_motor_funcs;  ///< drive motor functions
-    std::array<std::shared_ptr<ChLinkMotorRotation>, 2> m_arm_2_motors;    ///< drive motors
-    std::array<std::shared_ptr<ChFunctionConst>, 2> m_arm_2_motor_funcs;  ///< drive motor functions
+    std::array<std::shared_ptr<ChLinkMotorRotation>, 2> m_shoulder_joint_motors;    ///< shoulder joint motors (F,B)
+    std::array<std::shared_ptr<ChFunctionConst>, 2> m_shoulder_joint_motor_funcs;  ///< shoulder joint motor functions
+    std::array<std::shared_ptr<ChLinkMotorRotation>, 2> m_drum_joint_motors;             ///< drum joint motors (F,B)
+    std::array<std::shared_ptr<ChFunctionConst>, 2> m_drum_joint_motor_funcs;           ///< drum joint motor functions
 
     std::shared_ptr<RassorDriver> m_driver;  ///< rover driver system
 
@@ -353,8 +389,8 @@ class CH_MODELS_API RassorDriver {
     Rassor* rassor;  ///< associated Rassor rover
 
     std::array<double, 4> drive_speeds;  ///< angular speeds for drive motors
-    std::array<double, 2> arm_angle;    ///< angular position for should joint
-    std::array<double, 2> razor_speeds;  ///< angular speeds for razor motors
+    std::array<double, 2> shoulder_pos;    ///< angular position for shoulder joints
+    std::array<double, 2> drum_speeds;  ///< angular speeds for razor motors
 
     friend class Rassor;
 };
@@ -372,10 +408,10 @@ class CH_MODELS_API RassorSpeedDriver : public RassorDriver {
     void SetDriveMotorSpeed(RassorWheelID wheel_id, double drive_speed);
 
     /// Set current arm motor speed input.
-    void SetArmMotorAngle(RassorDirID dir_id, double arm_angle);
+    void SetShoulderMotorAngle(RassorDirID dir_id, double arm_angle);
 
-    /// Set current razor motor speed input.
-    void SetRazorMotorSpeed(RassorDirID dir_id, double razor_speed);
+    /// Set current drum motor speed input.
+    void SetDrumMotorSpeed(RassorDirID dir_id, double drum_speed);
 
   private:
     virtual DriveMotorType GetDriveMotorType() const override { return DriveMotorType::SPEED; }
@@ -383,8 +419,8 @@ class CH_MODELS_API RassorSpeedDriver : public RassorDriver {
 
     double m_ramp;
     double m_speed;
-    double m_arm_speed;
-    double m_razor_speed;
+    double m_shoulder_pos;
+    double m_drum_speed;
 };
 
 /// @} robot_models_rassor

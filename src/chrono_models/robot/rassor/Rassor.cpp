@@ -299,14 +299,14 @@ void Rassor::Create(RassorWheelType wheel_type) {
     z2z180.SetFromAngleAxis(CH_PI, ChVector3d(0, 0, 1));
     
 
-    m_razors[0] =
+    m_drums[0] =
         chrono_types::make_shared<RassorDrum>("razor_F", ChFrame<>(ChVector3d(+rx, ry, rz), QUNIT), m_wheel_material);
 
-    m_razors[1] =
+    m_drums[1] =
         chrono_types::make_shared<RassorDrum>("razor_B", ChFrame<>(ChVector3d(-rx, ry, rz), QUNIT), m_wheel_material);
 
-    m_razors[0]->m_mesh_name = "drum_cw";
-    m_razors[1]->m_mesh_name = "drum_ccw";
+    m_drums[0]->m_mesh_name = "drum_cw";
+    m_drums[1]->m_mesh_name = "drum_ccw";
 
 
     // initialize rover arms
@@ -334,7 +334,7 @@ void Rassor::Initialize(const ChFrame<>& pos) {
     }
 
     for (int i = 0; i < 2; i++) {
-        m_razors[i]->Initialize(m_chassis->GetBody());
+        m_drums[i]->Initialize(m_chassis->GetBody());
         m_arms[i]->Initialize(m_chassis->GetBody());
     }
 
@@ -362,12 +362,12 @@ void Rassor::Initialize(const ChFrame<>& pos) {
     std::vector<ChVector3d> arm_motor_rel_pos = {ChVector3d(+ax, ay, az), ChVector3d(-ax, ay, az)};
     for (int i = 0; i < 2; i++) {
         if (i == 0)
-            m_arm_1_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(-0.25);
+            m_shoulder_joint_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(-0.25);
         if (i == 1)
-            m_arm_1_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.25);
-        m_arm_1_motors[i] =
+            m_shoulder_joint_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.25);
+        m_shoulder_joint_motors[i] =
             AddMotorAngle(m_chassis->GetBody(), m_arms[i]->GetBody(), m_chassis, arm_motor_rel_pos[i], z2y);
-        m_arm_1_motors[i]->SetMotorFunction(m_arm_1_motor_funcs[i]);
+        m_shoulder_joint_motors[i]->SetMotorFunction(m_shoulder_joint_motor_funcs[i]);
     }
 
     // intialize the speed motor of the drum
@@ -377,10 +377,9 @@ void Rassor::Initialize(const ChFrame<>& pos) {
     std::vector<ChVector3d> arm_motor_rel_pos_2 = {ChVector3d(+rx, ry, rz), ChVector3d(-rx, ry, rz)};
 
     for (int i = 0; i < 2; i++) {
-        m_arm_2_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.25);
-        m_arm_2_motors[i] =
-            AddMotorSpeed(m_arms[i]->GetBody(), m_razors[i]->GetBody(), m_chassis, arm_motor_rel_pos_2[i], z2y);
-        m_arm_2_motors[i]->SetMotorFunction(m_arm_2_motor_funcs[i]);
+        m_drum_joint_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.25);
+        m_drum_joint_motors[i] = AddMotorSpeed(m_arms[i]->GetBody(), m_drums[i]->GetBody(), m_chassis, arm_motor_rel_pos_2[i], z2y);
+        m_drum_joint_motors[i]->SetMotorFunction(m_drum_joint_motor_funcs[i]);
     }
 }
 
@@ -430,8 +429,8 @@ double Rassor::GetRoverMass() const {
     tot_mass += m_arms[0]->GetBody()->GetMass();
     tot_mass += m_arms[1]->GetBody()->GetMass();
 
-    tot_mass += m_razors[0]->GetBody()->GetMass();
-    tot_mass += m_razors[1]->GetBody()->GetMass();
+    tot_mass += m_drums[0]->GetBody()->GetMass();
+    tot_mass += m_drums[1]->GetBody()->GetMass();
     return tot_mass;
 }
 
@@ -452,10 +451,10 @@ void Rassor::Update() {
     }
 
     for (int i = 0; i < 2; i++) {
-        double arm_speed = m_driver->arm_angle[i];
-        double razor_speed = m_driver->razor_speeds[i];
-        m_arm_1_motor_funcs[i]->SetConstant(arm_speed);
-        m_arm_2_motor_funcs[i]->SetConstant(razor_speed);
+        double shoulder_rotation = m_driver->shoulder_pos[i];
+        double drum_speed = m_driver->drum_speeds[i];
+        m_shoulder_joint_motor_funcs[i]->SetConstant(shoulder_rotation);
+        m_drum_joint_motor_funcs[i]->SetConstant(drum_speed);
     }
 }
 
@@ -470,7 +469,7 @@ void Rassor::writeMeshFile(const std::string& out_dir, int frame_number,  bool s
 
     for (int i = 0; i < 2; i++) {
         body_mesh_list.push_back(m_arms[i]);
-        body_mesh_list.push_back(m_razors[i]);
+        body_mesh_list.push_back(m_drums[i]);
     }
 
     for (int i = 0; i < body_mesh_list.size(); i++) {
@@ -499,7 +498,8 @@ void Rassor::writeMeshFile(const std::string& out_dir, int frame_number,  bool s
 
 // =============================================================================
 
-RassorDriver::RassorDriver() : drive_speeds({0, 0, 0, 0}), arm_angle({0, 0}), razor_speeds({0, 0}), rassor(nullptr) {}
+RassorDriver::RassorDriver()
+    : drive_speeds({0, 0, 0, 0}), shoulder_pos({0, 0}), drum_speeds({0, 0}), rassor(nullptr) {}
 
 RassorSpeedDriver::RassorSpeedDriver(double time_ramp) : m_ramp(time_ramp) {}
 
@@ -509,13 +509,13 @@ void RassorSpeedDriver::SetDriveMotorSpeed(RassorWheelID wheel_id, double drive_
 }
 
 /// Set current arm motor speed input.
-void RassorSpeedDriver::SetArmMotorAngle(RassorDirID dir_id, double arm_speed) {
-    arm_angle[dir_id] = arm_speed;
+void RassorSpeedDriver::SetShoulderMotorAngle(RassorDirID dir_id, double shoulder_rot) {
+    shoulder_pos[dir_id] = shoulder_rot;
 }
 
 /// Set current razor motor speed input.
-void RassorSpeedDriver::SetRazorMotorSpeed(RassorDirID dir_id, double razor_speed) {
-    razor_speeds[dir_id] = razor_speed;
+void RassorSpeedDriver::SetDrumMotorSpeed(RassorDirID dir_id, double razor_speed) {
+    drum_speeds[dir_id] = razor_speed;
 }
 
 void RassorSpeedDriver::Update(double time) {}

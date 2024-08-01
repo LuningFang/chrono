@@ -189,19 +189,23 @@ int main(int argc, char* argv[]) {
 
         //}
 
-        driver->SetRazorMotorSpeed((RassorDirID)0, 3.14);
-        driver->SetRazorMotorSpeed((RassorDirID)1, -3.14);
+        driver->SetShoulderMotorAngle((RassorDirID)0, -0.1);
+        driver->SetShoulderMotorAngle((RassorDirID)1,  0.1);
 
-        if (time <= 2.0) {
-            //driver->SetArmMotorAngle((RassorDirID)0, -CH_PI_2);
-            driver->SetArmMotorAngle((RassorDirID)1, -CH_PI_4);
-        } else {
-            driver->SetArmMotorAngle((RassorDirID)0, 0.0);
-            driver->SetArmMotorAngle((RassorDirID)1, 0.0);
-        }
+        //if (time <= 2.0) {
+        //    //driver->SetArmMotorAngle((RassorDirID)0, -CH_PI_2);
+        //    driver->SetArmMotorAngle((RassorDirID)1, -CH_PI_4);
+        //} else {
+        //    driver->SetArmMotorAngle((RassorDirID)0, 0.0);
+        //    driver->SetArmMotorAngle((RassorDirID)1, 0.0);
+        //}
 
         std::cout << time << std::endl;
+        std::cout << "drum joint torque: front, " << rassor.GetDrumMotorRotTorque((RassorDirID)0) << " rear, " << rassor.GetDrumMotorRotTorque((RassorDirID)1) << std::endl;
 
+
+        std::cout << "drum joint reaction force, " << rassor.GetDrumMotorReactionForce((RassorDirID)0) << " rear, "
+                  << rassor.GetDrumMotorReactionForce((RassorDirID)1) << std::endl;
         // Update Rassor controls
         rassor.Update();
 
