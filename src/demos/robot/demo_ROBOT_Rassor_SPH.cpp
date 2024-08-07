@@ -35,6 +35,7 @@
 #endif
 
 #include "chrono_thirdparty/filesystem/path.h"
+#include <cmath>  // Make sure to include cmath for the sin() function
 
 using namespace chrono;
 using namespace chrono::fsi;
@@ -91,6 +92,15 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI);
 std::vector<ChVector3d> LoadSolidPhaseBCE(std::string filename);
 bool CreateSubDirectories(std::string out_dir);
 
+
+
+// Define the sine_wave function
+double sine_wave(double amplitude, double frequency, double phase, double current_time) {
+    return amplitude * sin(2 * CH_PI * frequency * current_time + phase);
+}
+
+
+
 int main(int argc, char* argv[]) {
 
     // check number of command line inputs
@@ -102,7 +112,7 @@ int main(int argc, char* argv[]) {
     // get the TestID from the command line
     int TestID = 2;
     double artificial_viscosity = 0.1;
-    std::string out_dir = "full_vehicle_raise_drum";
+    std::string out_dir = "rassor_raise_sine_wave";
 
     double wheel_radius = 0.22;
     double wheel_driver_speed  = rover_velocity_array[TestID] / wheel_radius;
@@ -119,7 +129,7 @@ int main(int argc, char* argv[]) {
     // write down header line
     // time,x,y,z,yaw,pitch,roll,front_fx,front_fy,front_fz,front_tx,front_ty,front_tz,back_fx,back_fy,back_fz,back_tx,back_ty,back_tz
     info_file << "time,x,y,z,roll,pitch,yaw,front_fx,front_fy,front_fz,front_tx,front_ty,front_tz,back_fx,back_fy,back_"
-                 "fz,back_tx,back_ty,back_tz"
+                 "fz,back_tx,back_ty,back_tz,front_shoulder,back_shoulder"
               << std::endl;
 
 
@@ -243,16 +253,26 @@ int main(int argc, char* argv[]) {
     while (time < total_time) {
 
         //// RASSOR 2.0, drum spinning counter clock wise
-        //driver->SetRazorMotorSpeed((RassorDirID)0, -bucket_driver_speed);
-        //driver->SetRazorMotorSpeed((RassorDirID)1,  bucket_driver_speed);
+        driver->SetDrumMotorSpeed((RassorDirID)0, -bucket_driver_speed);
+        driver->SetDrumMotorSpeed((RassorDirID)1, bucket_driver_speed);
+
+
+        //if (time < 0.4) {
+        //    driver->SetShoulderMotorAngle((RassorDirID)0, 0.05); // front drum goes down
+            driver->SetShoulderMotorAngle((RassorDirID)1, -0.05);        
+        //}
+
+        double shoulder_angle =
+        sine_wave(0.05, 2.0, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
+        driver->SetShoulderMotorAngle((RassorDirID)0, shoulder_angle);
 
         // RASSOR 1.0, drum spinning  clock wise
-        driver->SetDrumMotorSpeed((RassorDirID)0,  bucket_driver_speed);
-        driver->SetDrumMotorSpeed((RassorDirID)1, -bucket_driver_speed);
+        //driver->SetDrumMotorSpeed((RassorDirID)0,  bucket_driver_speed);
+        //driver->SetDrumMotorSpeed((RassorDirID)1, -bucket_driver_speed);
 
 
         for (int i = 0; i < 4; i++) {
-            driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed/3.0);
+            driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed);
         }
 
         ChVector3d front_shoulder_joint_force = rover->GetShoulderMotorReactionForce((RassorDirID)0);
@@ -270,50 +290,43 @@ int main(int argc, char* argv[]) {
 			  << front_shoulder_joint_force.x() << "," << front_shoulder_joint_force.y() << "," << front_shoulder_joint_force.z() << ","
 			  << front_shoulder_joint_torque.x() << "," << front_shoulder_joint_torque.y() << "," << front_shoulder_joint_torque.z() << ","
 			  << back_shoulder_joint_force.x() << "," << back_shoulder_joint_force.y() << "," << back_shoulder_joint_force.z() << ","
-			  << back_shoulder_joint_torque.x() << "," << back_shoulder_joint_torque.y() << "," << back_shoulder_joint_torque.z() << std::endl;
+			  << back_shoulder_joint_torque.x() << "," << back_shoulder_joint_torque.y() << "," << back_shoulder_joint_torque.z() << 
+                "," << rover->GetShoulderMotorRot((RassorDirID)0) << ","
+                  << rover->GetShoulderMotorRot((RassorDirID)1) <<            
+            std::endl;
 
-        if (time >= 1.0) {
-            // raise backdrum
-            driver->SetShoulderMotorAngle((RassorDirID)1, 0.25);
+        //double shoulder_angle = -0.1;
+
+        // push drum down very slightly 
+        // lower backdrum
+
+        ///////////This part is actually pretty good, i jsut need the front drum to go down a little bit
+        /*
+        if (time >= 0.4 && time < 0.65) {
+            // raise front drum
+            driver->SetShoulderMotorAngle((RassorDirID)0, -0.05);
         }
 
-        //if (time <= 2.0) {
-        //    for (int i = 0; i < 4; i++) {
-        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 2.0);
-        //    }
+        if (time >= 0.65 && time < 0.9 ) {
+            // center front drum
+            driver->SetShoulderMotorAngle((RassorDirID)0, 0);
+        }
 
-        //    driver->SetRazorMotorSpeed((RassorDirID)0, 2.0);
-        //    driver->SetRazorMotorSpeed((RassorDirID)1, 2.0);
-        //    driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
-        //    driver->SetArmMotorSpeed((RassorDirID)1, 0.0);
-        //} else if (time > 2.0 && time <= 5.0) {
-        //    for (int i = 0; i < 4; i++) {
-        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
-        //    }
+        if (time >= 0.9 && time < 1.15) {
+            // raise front drum
+            driver->SetShoulderMotorAngle((RassorDirID)0, -0.1);
+        }
 
-        //    driver->SetRazorMotorSpeed((RassorDirID)0, 3.14);
-        //    driver->SetRazorMotorSpeed((RassorDirID)1, -3.14);
-        //    driver->SetArmMotorSpeed((RassorDirID)0, 0.05);
-        //    driver->SetArmMotorSpeed((RassorDirID)1, -0.05);
-        //} else if (time > 5.0 && time <= 7.0) {
-        //    for (int i = 0; i < 4; i++) {
-        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
-        //    }
+        if (time >= 1.15 && time < 1.4) {
+            // center front drum
+            driver->SetShoulderMotorAngle((RassorDirID)0, 0);
+        }
 
-        //    driver->SetRazorMotorSpeed((RassorDirID)0, 0.0);
-        //    driver->SetRazorMotorSpeed((RassorDirID)1, 0.0);
-        //    driver->SetArmMotorSpeed((RassorDirID)0, -0.55);
-        //    driver->SetArmMotorSpeed((RassorDirID)1, 0.55);
-        //} else if (time > 7.0 && time <= 10.0) {
-        //    for (int i = 0; i < 4; i++) {
-        //        driver->SetDriveMotorSpeed((RassorWheelID)i, 0.0);
-        //    }
-
-        //    driver->SetRazorMotorSpeed((RassorDirID)0, -2.0);
-        //    driver->SetRazorMotorSpeed((RassorDirID)1, 2.0);
-        //    driver->SetArmMotorSpeed((RassorDirID)0, 0.0);
-        //    driver->SetArmMotorSpeed((RassorDirID)1, 0.0);
-        //}
+        if (time >= 1.4 && time < 1.65) {
+            // raise front drum
+            driver->SetShoulderMotorAngle((RassorDirID)0, -0.15);
+        }
+        */
 
 
         rover->Update();
@@ -434,18 +447,18 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
         sysFSI.AddFsiBody(razor_body);
 
         // This is the case for bucket pushing soil away (front drum spin counter clock wise)
-        //if (i == 0) {
-        //    sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
-        //} else {
-        //    sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
-        //}
+        if (i == 0) {
+            sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
+        } else {
+            sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
+        }
 
         // This is the case for front drum spins clockwise
-        if (i == 0) {
-            sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
-        } else {
-            sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
-        }
+        //if (i == 0) {
+        //    sysFSI.AddPointsBCE(razor_body, BCE_razor_back, ChFrame<>(VNULL, QUNIT), true);
+        //} else {
+        //    sysFSI.AddPointsBCE(razor_body, BCE_razor_front, ChFrame<>(VNULL, QUNIT), true);
+        //}
 
 
 
