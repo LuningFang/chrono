@@ -60,7 +60,7 @@ double bzDim = 0.1;
 ChVector3d init_loc(-bxDim / 2.0 + 1.0, 0, bzDim + 0.25);
 
 // Simulation time and stepsize
-double total_time = 10.0;
+double total_time = 13.0;
 double dT = 2.0e-4;
 
 // Save data as csv files to see the results off-line using Paraview
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     // get the TestID from the command line
     int TestID = 2;
     double artificial_viscosity = 0.1;
-    std::string out_dir = "rassor_raise_sine_wave";
+    std::string out_dir = "rassor_raise_sine_wave_back_forth";
 
     double wheel_radius = 0.22;
     double wheel_driver_speed  = rover_velocity_array[TestID] / wheel_radius;
@@ -256,24 +256,34 @@ int main(int argc, char* argv[]) {
         driver->SetDrumMotorSpeed((RassorDirID)0, -bucket_driver_speed);
         driver->SetDrumMotorSpeed((RassorDirID)1, bucket_driver_speed);
 
+        double time_back = 6.5;  // try 6.5
 
-        //if (time < 0.4) {
-        //    driver->SetShoulderMotorAngle((RassorDirID)0, 0.05); // front drum goes down
+        if (time < time_back) {
             driver->SetShoulderMotorAngle((RassorDirID)1, -0.05);        
-        //}
+            double shoulder_angle = sine_wave(0.05, 2.0, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
+            driver->SetShoulderMotorAngle((RassorDirID)0, shoulder_angle);
+            for (int i = 0; i < 4; i++) {
+                driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed);
+            }
+        }
 
-        double shoulder_angle =
-        sine_wave(0.05, 2.0, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
-        driver->SetShoulderMotorAngle((RassorDirID)0, shoulder_angle);
+        if (time > time_back) {
+            driver->SetShoulderMotorAngle((RassorDirID)0, 0.05);
+            double shoulder_angle =
+                sine_wave(0.05, 2.0, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
+            driver->SetShoulderMotorAngle((RassorDirID)1, shoulder_angle);
+            for (int i = 0; i < 4; i++) {
+                driver->SetDriveMotorSpeed((RassorWheelID)i, -wheel_driver_speed);
+            }
+        }
+
+
 
         // RASSOR 1.0, drum spinning  clock wise
         //driver->SetDrumMotorSpeed((RassorDirID)0,  bucket_driver_speed);
         //driver->SetDrumMotorSpeed((RassorDirID)1, -bucket_driver_speed);
 
 
-        for (int i = 0; i < 4; i++) {
-            driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed);
-        }
 
         ChVector3d front_shoulder_joint_force = rover->GetShoulderMotorReactionForce((RassorDirID)0);
         ChVector3d back_shoulder_joint_force = rover->GetShoulderMotorReactionForce((RassorDirID)1);
