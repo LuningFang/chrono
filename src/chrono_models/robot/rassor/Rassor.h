@@ -279,6 +279,9 @@ class CH_MODELS_API Rassor {
 
     double GetShoulderMotorRotTorque(RassorDirID id) { return m_shoulder_joint_motors[id]->GetMotorTorque(); }
 
+
+
+
     // shoulder joint reaction force applied to chassis expressed in the chassis frame
     ChVector3d GetShoulderMotorReactionForce(RassorDirID id) {
         // this is returning force in the global frame
@@ -300,6 +303,23 @@ class CH_MODELS_API Rassor {
             m_shoulder_joint_motors[id]->GetReaction2().torque);
     }
 
+
+    // Drum joint reaction force applied to the drum expressed in the global frame
+    ChVector3d GetDrumMotorReactionForce(RassorDirID id) {
+        return m_drum_joint_motors[id]->GetFrame2Abs().TransformDirectionLocalToParent(
+			m_drum_joint_motors[id]->GetReaction2().force);
+	}
+
+    // Get Soil mass (kg) in the drum, front or rear 
+    double GetSoilMass(RassorDirID id) {
+
+        double reaction_force = GetDrumMotorReactionForce(id).z();
+        double soil_weight = reaction_force - GetDrumMass() * 9.8;
+        return soil_weight / 9.8;
+
+    }
+
+
     // 
     ChVector3d GetChassisRPY() const { return GetChassisRot().GetCardanAnglesXYZ();}
      
@@ -312,16 +332,16 @@ class CH_MODELS_API Rassor {
     double GetDrumMotorRot(RassorDirID id) { return m_drum_joint_motors[id]->GetMotorAngle(); }
     double GetDrumMotorRot_dt(RassorDirID id) { return m_drum_joint_motors[id]->GetMotorAngleDt(); }
     double GetDrumMotorRotTorque(RassorDirID id) { return m_drum_joint_motors[id]->GetMotorTorque(); }
-    ChVector3d GetDrumMotorReactionForce(RassorDirID id) { return m_drum_joint_motors[id]->GetReaction1().force; }
-
-
-
 
     /// Get total rover mass.
     double GetRoverMass() const;
 
     /// Get total wheel mass.
     double GetWheelMass() const;
+
+    /// Get drum mass
+    double GetDrumMass() const;
+
 
     /// Get drive motor function.
     /// This will return an empty pointer if the associated driver uses torque control.

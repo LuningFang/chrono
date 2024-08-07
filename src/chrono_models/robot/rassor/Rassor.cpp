@@ -438,6 +438,10 @@ double Rassor::GetWheelMass() const {
     return m_wheels[0]->GetBody()->GetMass();
 }
 
+double Rassor::GetDrumMass() const {
+    return m_drums[0]->GetBody()->GetMass();
+}
+
 void Rassor::Update() {
     double time = m_system->GetChTime();
     m_driver->Update(time);

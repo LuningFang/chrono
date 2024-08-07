@@ -55,7 +55,7 @@ bool use_custom_mat = false;
 RassorWheelType wheel_type = RassorWheelType::RealWheel;
 
 // Simulation time step
-double time_step = 1e-3;
+double time_step = 5e-4;
 
 // -----------------------------------------------------------------------------
 
@@ -189,8 +189,8 @@ int main(int argc, char* argv[]) {
 
         //}
 
-        driver->SetShoulderMotorAngle((RassorDirID)0, -0.1);
-        driver->SetShoulderMotorAngle((RassorDirID)1,  0.1);
+        driver->SetShoulderMotorAngle((RassorDirID)0, -0.3);
+        driver->SetShoulderMotorAngle((RassorDirID)1,  0.3);
 
         //if (time <= 2.0) {
         //    //driver->SetArmMotorAngle((RassorDirID)0, -CH_PI_2);
@@ -201,12 +201,14 @@ int main(int argc, char* argv[]) {
         //}
 
         std::cout << time << std::endl;
-        std::cout << "drum joint torque: front, " << rassor.GetDrumMotorRotTorque((RassorDirID)0) << " rear, " << rassor.GetDrumMotorRotTorque((RassorDirID)1) << std::endl;
-
 
         std::cout << "drum joint reaction force, " << rassor.GetDrumMotorReactionForce((RassorDirID)0) << " rear, "
                   << rassor.GetDrumMotorReactionForce((RassorDirID)1) << std::endl;
         // Update Rassor controls
+
+        std::cout << "drum weight: " << rassor.GetDrumMass() * 9.8 << "soil mass (kg): "
+                  << rassor.GetSoilMass((RassorDirID)0) << ", " << rassor.GetSoilMass((RassorDirID)1) << std::endl;
+
         rassor.Update();
 
         sys.DoStepDynamics(time_step);

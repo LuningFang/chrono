@@ -52,15 +52,15 @@ double density = 2600.0;
 
 // Dimension of the space domain
 double bxDim = 3.0; // this for real
-//double bxDim = 3.0; // use this for debug
-double byDim = 0.9;
+//double bxDim = 2.0; // use this for debug
+double byDim = 1.0;
 double bzDim = 0.1;
 
 // Rover initial location
 ChVector3d init_loc(-bxDim / 2.0 + 1.0, 0, bzDim + 0.25);
 
 // Simulation time and stepsize
-double total_time = 13.0;
+double total_time = 8.0;
 double dT = 2.0e-4;
 
 // Save data as csv files to see the results off-line using Paraview
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     // get the TestID from the command line
     int TestID = 2;
     double artificial_viscosity = 0.1;
-    std::string out_dir = "rassor_raise_sine_wave_back_forth";
+    std::string out_dir = "rassor_raise_sine_wave_freq_5e-1Hz";
 
     double wheel_radius = 0.22;
     double wheel_driver_speed  = rover_velocity_array[TestID] / wheel_radius;
@@ -260,23 +260,39 @@ int main(int argc, char* argv[]) {
 
         if (time < time_back) {
             driver->SetShoulderMotorAngle((RassorDirID)1, -0.05);        
-            double shoulder_angle = sine_wave(0.05, 2.0, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
+            double shoulder_angle = sine_wave(0.05, 0.5, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
             driver->SetShoulderMotorAngle((RassorDirID)0, shoulder_angle);
             for (int i = 0; i < 4; i++) {
                 driver->SetDriveMotorSpeed((RassorWheelID)i, wheel_driver_speed);
             }
         }
 
-        if (time > time_back) {
-            driver->SetShoulderMotorAngle((RassorDirID)0, 0.05);
-            double shoulder_angle =
-                sine_wave(0.05, 2.0, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
-            driver->SetShoulderMotorAngle((RassorDirID)1, shoulder_angle);
-            for (int i = 0; i < 4; i++) {
-                driver->SetDriveMotorSpeed((RassorWheelID)i, -wheel_driver_speed);
-            }
-        }
+        //if (time > time_back && time < 2.* time_back) {
+        //    driver->SetShoulderMotorAngle((RassorDirID)0, 0.05);
+        //    double shoulder_angle =
+        //        sine_wave(0.05, 2.0, 0, time);  // Oscillates with amplitude of 0.05 and frequency of 2 Hz
+        //    driver->SetShoulderMotorAngle((RassorDirID)1, shoulder_angle);
+        //    for (int i = 0; i < 4; i++) {
+        //        driver->SetDriveMotorSpeed((RassorWheelID)i, -wheel_driver_speed);
+        //    }
+        //}
 
+        if (time > time_back) {
+
+            // Now we stop everything and raise both drums up 
+            driver->SetDriveMotorSpeed((RassorWheelID)0, 0.0);
+            driver->SetDriveMotorSpeed((RassorWheelID)2, 0.0);
+            driver->SetDriveMotorSpeed((RassorWheelID)1, 0.0);
+            driver->SetDriveMotorSpeed((RassorWheelID)3, 0.0);
+
+            driver->SetDrumMotorSpeed((RassorDirID)0, 0.0);
+            driver->SetDrumMotorSpeed((RassorDirID)1, 0.0);
+
+            driver->SetShoulderMotorAngle((RassorDirID)0, -0.2);
+            driver->SetShoulderMotorAngle((RassorDirID)1,  0.2);
+
+
+        }
 
 
         // RASSOR 1.0, drum spinning  clock wise
@@ -355,6 +371,14 @@ int main(int argc, char* argv[]) {
                 sysFSI.PrintParticleToFile(out_dir + "/particles");
                 sysFSI.PrintFsiInfoToFile(out_dir + "/fsi", time);
                 rover->writeMeshFile(out_dir + "/rover", int(current_step/output_steps), true);
+            }
+
+
+            if (time > time_back + 0.2 && output && current_step % output_steps == 0) {
+            
+                std::cout << "soil in front and back drum: " << rover->GetSoilMass((RassorDirID)0) << ", "
+                          << rover->GetSoilMass((RassorDirID)1) << " kg" << std::endl;
+            
             }
 
         // Render system
